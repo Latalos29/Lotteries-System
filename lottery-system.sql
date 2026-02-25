@@ -1,137 +1,283 @@
--- phpMyAdmin SQL Dump
--- version 5.2.1
--- https://www.phpmyadmin.net/
---
--- Host: 127.0.0.1
--- Generation Time: Feb 23, 2026 at 07:33 AM
--- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+<?php
+/* ══════════════════════════════════
+   index.php — โชว์ & ค้นหาลอตเตอรี่
+   ══════════════════════════════════ */
 
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-START TRANSACTION;
-SET time_zone = "+00:00";
+$allLotteries = [
+  ['lottery_id'=>'3000000001','lotteryNumber'=>'100001','price'=>80, 'draw_id'=>'30000001','status'=>'available','draw_date'=>'2026-03-16'],
+  ['lottery_id'=>'3000000002','lotteryNumber'=>'200034','price'=>80, 'draw_id'=>'30000001','status'=>'available','draw_date'=>'2026-03-16'],
+  ['lottery_id'=>'3000000003','lotteryNumber'=>'345678','price'=>100,'draw_id'=>'30000002','status'=>'available','draw_date'=>'2026-03-16'],
+  ['lottery_id'=>'3000000004','lotteryNumber'=>'456789','price'=>100,'draw_id'=>'30000002','status'=>'reserved', 'draw_date'=>'2026-03-16'],
+  ['lottery_id'=>'3000000005','lotteryNumber'=>'567890','price'=>120,'draw_id'=>'30000003','status'=>'available','draw_date'=>'2026-03-16'],
+  ['lottery_id'=>'3000000006','lotteryNumber'=>'678901','price'=>120,'draw_id'=>'30000003','status'=>'sold',     'draw_date'=>'2026-03-16'],
+  ['lottery_id'=>'3000000007','lotteryNumber'=>'789012','price'=>80, 'draw_id'=>'30000004','status'=>'available','draw_date'=>'2026-03-16'],
+  ['lottery_id'=>'3000000008','lotteryNumber'=>'890123','price'=>80, 'draw_id'=>'30000004','status'=>'reserved', 'draw_date'=>'2026-03-16'],
+  ['lottery_id'=>'3000000009','lotteryNumber'=>'901234','price'=>100,'draw_id'=>'30000005','status'=>'available','draw_date'=>'2026-03-16'],
+  ['lottery_id'=>'3000000010','lotteryNumber'=>'123456','price'=>100,'draw_id'=>'30000005','status'=>'sold',     'draw_date'=>'2026-03-16'],
+  ['lottery_id'=>'3000000011','lotteryNumber'=>'234567','price'=>120,'draw_id'=>'30000006','status'=>'available','draw_date'=>'2026-04-01'],
+  ['lottery_id'=>'3000000012','lotteryNumber'=>'135792','price'=>80, 'draw_id'=>'30000006','status'=>'available','draw_date'=>'2026-04-01'],
+  ['lottery_id'=>'3000000013','lotteryNumber'=>'246801','price'=>100,'draw_id'=>'30000007','status'=>'reserved', 'draw_date'=>'2026-04-01'],
+  ['lottery_id'=>'3000000014','lotteryNumber'=>'357912','price'=>100,'draw_id'=>'30000007','status'=>'available','draw_date'=>'2026-04-01'],
+  ['lottery_id'=>'3000000015','lotteryNumber'=>'468023','price'=>120,'draw_id'=>'30000008','status'=>'sold',     'draw_date'=>'2026-04-01'],
+  ['lottery_id'=>'3000000016','lotteryNumber'=>'579134','price'=>80, 'draw_id'=>'30000008','status'=>'available','draw_date'=>'2026-04-01'],
+  ['lottery_id'=>'3000000017','lotteryNumber'=>'680245','price'=>100,'draw_id'=>'30000009','status'=>'available','draw_date'=>'2026-04-01'],
+  ['lottery_id'=>'3000000018','lotteryNumber'=>'791356','price'=>80, 'draw_id'=>'30000009','status'=>'reserved', 'draw_date'=>'2026-04-01'],
+  ['lottery_id'=>'3000000019','lotteryNumber'=>'802467','price'=>100,'draw_id'=>'30000010','status'=>'available','draw_date'=>'2026-04-01'],
+  ['lottery_id'=>'3000000020','lotteryNumber'=>'913578','price'=>120,'draw_id'=>'30000010','status'=>'sold',     'draw_date'=>'2026-04-01'],
+  ['lottery_id'=>'12345678',  'lotteryNumber'=>'111111','price'=>100,'draw_id'=>'11111111','status'=>'available','draw_date'=>'2026-02-16'],
+  ['lottery_id'=>'87654321',  'lotteryNumber'=>'222222','price'=>120,'draw_id'=>'22222222','status'=>'reserved', 'draw_date'=>'2026-01-16'],
+  ['lottery_id'=>'43216578',  'lotteryNumber'=>'321654','price'=>150,'draw_id'=>'33333333','status'=>'sold',     'draw_date'=>'2026-02-16'],
+];
 
+$countAvail = count(array_filter($allLotteries, fn($l) => $l['status'] === 'available'));
+$countSold  = count(array_filter($allLotteries, fn($l) => $l['status'] === 'sold'));
 
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
+function fmtDate(string $d): string {
+  $mo = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  [$y,$m,$day] = explode('-', $d);
+  return "$day {$mo[(int)$m]} ".((int)$y+543);
+}
+?>
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>LottoShop — ลอตเตอรี่ออนไลน์</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="bg-mesh"></div>
+<div class="bg-dots"></div>
 
---
--- Database: `lottery-system`
---
+<!-- HEADER -->
+<header>
+  <div class="hdr">
+    <a href="index.php" class="logo">
+      <div class="logo-ic">🎟</div>
+      <div>
+        <span class="logo-name">LottoShop</span>
+        <span class="logo-sub">Thai Government Lottery</span>
+      </div>
+    </a>
+    <nav class="nav">
+      <a href="index.php" class="here">หน้าแรก</a>
+      <a href="#">ผลรางวัล</a>
+      <a href="#">วิธีสั่งซื้อ</a>
+      <div class="nav-sep"></div>
+      <a href="login.php" class="btn-login">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+        </svg>
+        เข้าสู่ระบบ
+      </a>
+    </nav>
+  </div>
+</header>
 
--- --------------------------------------------------------
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-pill">🏆 งวดประจำวันที่ 16 มีนาคม 2569</div>
+  <h1>ลอตเตอรี่รัฐบาลไทย<br>ราคาตามหน้าบัตร</h1>
+  <p>เลือกดูลอตเตอรี่ที่มีขาย ค้นหาเลขที่ชอบได้เลย</p>
+  <div class="stats">
+    <div class="stat">
+      <span class="stat-lbl">รางวัลที่ 1</span>
+      <span class="stat-val">6,000,000 ฿</span>
+    </div>
+    <div class="stat">
+      <span class="stat-lbl">ว่างอยู่</span>
+      <span class="stat-val green"><?= $countAvail ?> ใบ</span>
+    </div>
+    <div class="stat">
+      <span class="stat-lbl">จำหน่ายแล้ว</span>
+      <span class="stat-val red"><?= $countSold ?> ใบ</span>
+    </div>
+    <div class="stat">
+      <span class="stat-lbl">ออกรางวัล</span>
+      <span class="stat-val">16 มี.ค.</span>
+    </div>
+  </div>
+</section>
 
---
--- Table structure for table `draws`
---
+<!-- SEARCH & FILTER -->
+<div class="search-wrap">
+  <div class="search-row">
+    <span class="search-ic">🔍</span>
+    <input
+      type="text" id="searchInput"
+      placeholder="พิมพ์เลขที่ต้องการ เช่น 100001, 456, 78..."
+      oninput="onSearch(this.value)"
+      autocomplete="off"
+    >
+    <span class="search-hint" id="searchHint"></span>
+    <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
+  </div>
+  <div class="filter-row">
+    <span class="fl">สถานะ :</span>
+    <a class="chip on" href="#" onclick="filterStatus('all',this)">ทั้งหมด</a>
+    <a class="chip"    href="#" onclick="filterStatus('available',this)">ว่างอยู่</a>
+    <a class="chip"    href="#" onclick="filterStatus('reserved',this)">จองแล้ว</a>
+    <a class="chip"    href="#" onclick="filterStatus('sold',this)">จำหน่ายแล้ว</a>
+    <div class="sep"></div>
+    <span class="fl">งวด :</span>
+    <a class="chip on" href="#" onclick="filterDraw('',this)">ทั้งหมด</a>
+    <a class="chip"    href="#" onclick="filterDraw('2026-03-16',this)">16 มี.ค. 2569</a>
+    <a class="chip"    href="#" onclick="filterDraw('2026-04-01',this)">1 เม.ย. 2569</a>
+  </div>
+</div>
 
-CREATE TABLE `draws` (
-  `draw_id` varchar(8) NOT NULL,
-  `draw_date` date NOT NULL,
-  `draw_name` date NOT NULL,
-  `status` varchar(255) NOT NULL COMMENT 'open/closed/result_announced',
-  `created_at` date NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+<!-- GRID -->
+<main class="main">
+  <div class="sec-hd">
+    <h2>🎟 ลอตเตอรี่ทั้งหมด</h2>
+    <span class="sec-cnt" id="gridCount"><?= count($allLotteries) ?> ใบ</span>
+  </div>
 
---
--- Dumping data for table `draws`
---
+  <div class="no-result" id="noResult">
+    <span class="no-result-ic">🔍</span>
+    <p>ไม่พบเลขที่ค้นหา</p>
+    <p style="margin-top:6px;font-size:13px;">ลองพิมพ์เลขอื่นดูนะครับ</p>
+  </div>
 
-INSERT INTO `draws` (`draw_id`, `draw_date`, `draw_name`, `status`, `created_at`) VALUES
-('11111111', '2026-02-28', '2026-02-16', 'open',             '2026-02-17'),
-('22222222', '2026-01-30', '2026-01-16', 'result_announced', '2026-01-18'),
-('26515634', '2026-03-01', '2026-03-16', 'open',             '2026-03-01'),
-('33333333', '2026-02-28', '2026-02-16', 'closed',           '2026-02-18'),
-('34515165', '2026-03-01', '2026-03-16', 'open',             '2026-03-01'),
-('65492493', '2026-03-01', '2026-03-16', 'open',             '2026-03-01'),
--- งวดใหม่ เริ่ม 1 มีนาคม 2026 (16 มีนา)
-('30000001', '2026-03-16', '2026-03-01', 'open',             '2026-03-01'),
-('30000002', '2026-03-16', '2026-03-01', 'open',             '2026-03-01'),
-('30000003', '2026-03-16', '2026-03-01', 'open',             '2026-03-01'),
-('30000004', '2026-03-16', '2026-03-01', 'open',             '2026-03-01'),
-('30000005', '2026-03-16', '2026-03-01', 'open',             '2026-03-01'),
--- งวดใหม่ เริ่ม 1 มีนาคม 2026 (1 เมษา)
-('30000006', '2026-04-01', '2026-03-01', 'open',             '2026-03-01'),
-('30000007', '2026-04-01', '2026-03-01', 'open',             '2026-03-01'),
-('30000008', '2026-04-01', '2026-03-01', 'open',             '2026-03-01'),
-('30000009', '2026-04-01', '2026-03-01', 'open',             '2026-03-01'),
-('30000010', '2026-04-01', '2026-03-01', 'open',             '2026-03-01');
+  <div class="grid" id="grid">
+    <?php foreach ($allLotteries as $l):
+      $numFmt   = str_pad($l['lotteryNumber'], 6, '0', STR_PAD_LEFT);
+      $drawDate = fmtDate($l['draw_date']);
+      $status   = $l['status'];
+    ?>
+    <div class="card <?= $status === 'sold' ? 'sold' : ($status === 'reserved' ? 'reserved' : '') ?>"
+         data-number="<?= $l['lotteryNumber'] ?>"
+         data-status="<?= $status ?>"
+         data-draw="<?= $l['draw_date'] ?>">
 
--- --------------------------------------------------------
+      <div class="tf">
+        <div class="tf-period">งวด <?= $drawDate ?></div>
+        <div class="tf-num" data-raw="<?= $numFmt ?>"><?= $numFmt ?></div>
+        <div class="notch nl"></div>
+        <div class="notch nr"></div>
+      </div>
 
---
--- Table structure for table `lotteries`
---
+      <div class="draw-ribbon">Draw <?= htmlspecialchars($l['draw_id']) ?> · <?= $drawDate ?></div>
 
-CREATE TABLE `lotteries` (
-  `lottery_id` varchar(13) NOT NULL,
-  `lotteryNumber` int(6) NOT NULL,
-  `price` int(3) NOT NULL,
-  `draw_id` varchar(8) DEFAULT NULL,
-  `status` varchar(255) NOT NULL COMMENT 'available/reserved/sold',
-  `created_at` date DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+      <div class="cb">
+        <div class="cb-row">
+          <div class="price">฿<?= number_format($l['price']) ?><span class="price-u">/ใบ</span></div>
+          <?php if ($status === 'sold'): ?>
+            <span class="stag tag-sold">จำหน่ายแล้ว</span>
+          <?php elseif ($status === 'reserved'): ?>
+            <span class="stag tag-reserved">จองแล้ว</span>
+          <?php else: ?>
+            <span class="stag tag-ok">ว่างอยู่</span>
+          <?php endif; ?>
+        </div>
+        <a href="detail.php?id=<?= htmlspecialchars($l['lottery_id']) ?>" class="btn-detail">
+          ดูรายละเอียด →
+        </a>
+      </div>
+    </div>
+    <?php endforeach; ?>
+  </div>
+</main>
 
---
--- Dumping data for table `lotteries`
---
+<!-- FOOTER -->
+<footer>
+  <p class="gold">LottoShop</p>
+  <p>ลอตเตอรี่รัฐบาลไทย · จำหน่ายราคาตามหน้าบัตร 80–150 บาท</p>
+</footer>
 
-INSERT INTO `lotteries` (`lottery_id`, `lotteryNumber`, `price`, `draw_id`, `status`, `created_at`) VALUES
-('12345678',    111111, 100, '11111111', 'available', '2026-02-19'),
-('43216578',    321654, 150, '33333333', 'sold',      '2026-02-19'),
-('87654321',    222222, 120, '22222222', 'reserved',  '2026-01-19'),
--- ลอตเตอรี่งวดใหม่ มีนาคม 2026
-('3000000001',  100001,  80, '30000001', 'available', '2026-03-01'),
-('3000000002',  200034,  80, '30000001', 'available', '2026-03-01'),
-('3000000003',  345678, 100, '30000002', 'available', '2026-03-01'),
-('3000000004',  456789, 100, '30000002', 'reserved',  '2026-03-01'),
-('3000000005',  567890, 120, '30000003', 'available', '2026-03-01'),
-('3000000006',  678901, 120, '30000003', 'sold',      '2026-03-01'),
-('3000000007',  789012,  80, '30000004', 'available', '2026-03-01'),
-('3000000008',  890123,  80, '30000004', 'reserved',  '2026-03-01'),
-('3000000009',  901234, 100, '30000005', 'available', '2026-03-01'),
-('3000000010',  123456, 100, '30000005', 'sold',      '2026-03-01'),
-('3000000011',  234567, 120, '30000006', 'available', '2026-03-01'),
-('3000000012',  135792,  80, '30000006', 'available', '2026-03-01'),
-('3000000013',  246801, 100, '30000007', 'reserved',  '2026-03-01'),
-('3000000014',  357912, 100, '30000007', 'available', '2026-03-01'),
-('3000000015',  468023, 120, '30000008', 'sold',      '2026-03-01'),
-('3000000016',  579134,  80, '30000008', 'available', '2026-03-01'),
-('3000000017',  680245, 100, '30000009', 'available', '2026-03-01'),
-('3000000018',  791356,  80, '30000009', 'reserved',  '2026-03-01'),
-('3000000019',  802467, 100, '30000010', 'available', '2026-03-01'),
-('3000000020',  913578, 120, '30000010', 'sold',      '2026-03-01');
+<script>
+let activeStatus = 'all';
+let activeDraw   = '';
+let searchTerm   = '';
+let searchTimer;
 
---
--- Indexes for dumped tables
---
+/* Real-time search */
+function onSearch(val) {
+  searchTerm = val.trim();
+  document.getElementById('searchClear').classList.toggle('show', searchTerm !== '');
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(applyFilters, 120);
+}
 
---
--- Indexes for table `draws`
---
-ALTER TABLE `draws`
-  ADD PRIMARY KEY (`draw_id`);
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  searchTerm = '';
+  document.getElementById('searchClear').classList.remove('show');
+  document.getElementById('searchHint').textContent = '';
+  applyFilters();
+}
 
---
--- Indexes for table `lotteries`
---
-ALTER TABLE `lotteries`
-  ADD PRIMARY KEY (`lottery_id`),
-  ADD KEY `draw_id` (`draw_id`);
+/* Filter chips */
+function filterStatus(s, el) {
+  event.preventDefault();
+  activeStatus = s;
+  el.closest('.filter-row').querySelectorAll('.chip').forEach(c => {
+    if (c.getAttribute('onclick') && c.getAttribute('onclick').startsWith('filterStatus'))
+      c.classList.remove('on');
+  });
+  el.classList.add('on');
+  applyFilters();
+}
 
---
--- Constraints for dumped tables
---
+function filterDraw(d, el) {
+  event.preventDefault();
+  activeDraw = d;
+  el.closest('.filter-row').querySelectorAll('.chip').forEach(c => {
+    if (c.getAttribute('onclick') && c.getAttribute('onclick').startsWith('filterDraw'))
+      c.classList.remove('on');
+  });
+  el.classList.add('on');
+  applyFilters();
+}
 
---
--- Constraints for table `lotteries`
---
-ALTER TABLE `lotteries`
-  ADD CONSTRAINT `lotteries_ibfk_1` FOREIGN KEY (`draw_id`) REFERENCES `draws` (`draw_id`);
-COMMIT;
+/* Apply */
+function applyFilters() {
+  const cards = document.querySelectorAll('#grid .card');
+  let visible = 0;
 
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+  cards.forEach(card => {
+    const num    = card.dataset.number;
+    const numPad = num.padStart(6, '0');
+    const status = card.dataset.status;
+    const draw   = card.dataset.draw;
+
+    const matchSearch = !searchTerm || numPad.includes(searchTerm) || num.includes(searchTerm);
+    const matchStatus = activeStatus === 'all' || status === activeStatus;
+    const matchDraw   = activeDraw   === ''    || draw   === activeDraw;
+
+    const show = matchSearch && matchStatus && matchDraw;
+    card.classList.toggle('hidden', !show);
+
+    if (show) {
+      visible++;
+      const el = card.querySelector('.tf-num');
+      el.innerHTML = searchTerm && matchSearch
+        ? highlight(numPad, searchTerm)
+        : numPad;
+    }
+  });
+
+  document.getElementById('gridCount').textContent = visible + ' ใบ';
+  document.getElementById('noResult').style.display = visible === 0 ? 'block' : 'none';
+
+  const hint = document.getElementById('searchHint');
+  if (searchTerm) {
+    hint.textContent = visible > 0 ? `พบ ${visible} ใบ` : 'ไม่พบ';
+    hint.style.color = visible > 0 ? 'var(--green)' : 'var(--red)';
+  } else {
+    hint.textContent = '';
+  }
+}
+
+function highlight(str, term) {
+  const i = str.indexOf(term);
+  if (i === -1) return str;
+  return str.slice(0, i)
+    + `<mark style="background:rgba(212,168,67,.35);color:var(--gold2);border-radius:3px;padding:0 1px">${str.slice(i, i + term.length)}</mark>`
+    + str.slice(i + term.length);
+}
+</script>
+</body>
+</html>
