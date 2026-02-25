@@ -107,8 +107,36 @@ if ($db) $db->close();
     </nav>
 
     <div class="hdr-right">
-      <button class="btn-login" onclick="openModal('login')">👤 เข้าสู่ระบบ</button>
-      <button class="btn-register" onclick="openModal('register')">สมัครสมาชิก</button>
+      <!-- แสดงเมื่อยังไม่ login -->
+      <div id="guestButtons">
+        <button class="btn-login" onclick="openModal('login')">เข้าสู่ระบบ</button>
+        <button class="btn-register" onclick="openModal('register')">สมัครสมาชิก</button>
+      </div>
+
+      <!-- แสดงเมื่อ login แล้ว -->
+      <div class="profile-wrap" id="profileWrap" style="display:none">
+        <button class="profile-btn" onclick="toggleProfileMenu()">
+          <div class="avatar" id="avatarCircle">?</div>
+          <span class="profile-name" id="profileName">ผู้ใช้</span>
+          <svg class="chevron" width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+        </button>
+        <div class="profile-menu" id="profileMenu">
+          <div class="profile-menu-header">
+            <div class="avatar-lg" id="avatarCircleLg">?</div>
+            <div>
+              <div class="pm-name" id="pmName">ผู้ใช้</div>
+              <div class="pm-email" id="pmEmail">—</div>
+            </div>
+          </div>
+          <div class="profile-menu-divider"></div>
+          <a class="pm-item" href="#">👤 โปรไฟล์ของฉัน</a>
+          <a class="pm-item" href="#">🎟 ประวัติการซื้อ</a>
+          <a class="pm-item" href="#">⚙️ ตั้งค่าบัญชี</a>
+          <div class="profile-menu-divider"></div>
+          <button class="pm-item pm-logout" onclick="doLogout()">🚪 ออกจากระบบ</button>
+        </div>
+      </div>
+
       <button class="btn-cart" onclick="openCart()" title="ตะกร้า">
         🛒<span class="cart-dot" id="cartDot">0</span>
       </button>
@@ -126,7 +154,7 @@ if ($db) $db->close();
 
   <h1>
     <span class="line1">ลอตเตอรี่รัฐบาลไทย</span>
-    <span class="line2">ราคาเป็นทางการ สั่งซื้อออนไลน์ได้ทุกวัย</span>
+    <span class="line2">ราคาเป็นทางการ ส่งตรงถึงมือ</span>
   </h1>
   <p class="hero-sub">เลือกเลขโชค สั่งซื้อง่าย รับรองของแท้ทุกใบ</p>
 
@@ -170,6 +198,11 @@ if ($db) $db->close();
     <div class="search-divider"></div>
 
     <div class="filter-row">
+      <span class="filter-lbl">งวด :</span>
+      <span class="chip on" data-draw="<?= htmlspecialchars($latestDrawId ?? '') ?>">
+        งวด <?= htmlspecialchars($latestDrawTh) ?>
+      </span>
+
       <span class="filter-lbl" style="margin-left:14px;">สถานะ :</span>
       <span class="chip on" data-status="available">ว่างอยู่</span>
       <span class="chip"    data-status="reserved">จองแล้ว</span>
@@ -226,7 +259,6 @@ if ($db) $db->close();
     <button class="modal-close" onclick="closeModal()">×</button>
 
     <div class="modal-logo">
-      <div class="m-ico">🎟</div>
       <h2>LottoShop</h2>
       <p id="modalDesc">เข้าสู่ระบบเพื่อซื้อลอตเตอรี่</p>
     </div>
@@ -509,14 +541,65 @@ function switchTab(tab) {
   document.getElementById('modalDesc').textContent = isLogin ? 'เข้าสู่ระบบเพื่อซื้อลอตเตอรี่' : 'สร้างบัญชีใหม่ฟรี — ง่ายและรวดเร็ว';
 }
 
+/* ── Auth state ── */
+let currentUser = null;
+
+function setLoggedIn(username, email='') {
+  currentUser = { name: username, email: email };
+  const initial = username.charAt(0).toUpperCase();
+  // avatar initials
+  document.getElementById('avatarCircle').textContent   = initial;
+  document.getElementById('avatarCircleLg').textContent = initial;
+  document.getElementById('profileName').textContent    = username.length > 10 ? username.substring(0,10)+'…' : username;
+  document.getElementById('pmName').textContent         = username;
+  document.getElementById('pmEmail').textContent        = email || '—';
+  // toggle visibility
+  document.getElementById('guestButtons').style.display  = 'none';
+  document.getElementById('profileWrap').style.display   = 'flex';
+}
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('guestButtons').style.display  = '';
+  document.getElementById('profileWrap').style.display   = 'none';
+  closeProfileMenu();
+  toast('👋 ออกจากระบบแล้ว');
+}
+
+function toggleProfileMenu() {
+  document.getElementById('profileMenu').classList.toggle('open');
+}
+function closeProfileMenu() {
+  document.getElementById('profileMenu').classList.remove('open');
+}
+// ปิด dropdown เมื่อคลิกข้างนอก
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('profileWrap');
+  if (wrap && !wrap.contains(e.target)) closeProfileMenu();
+});
+
 function doLogin() {
   const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value.trim();
   if (!u) { toast('⚠️ กรุณากรอกเบอร์หรืออีเมล'); return; }
-  closeModal(); toast('✅ เข้าสู่ระบบสำเร็จ (Demo Mode)');
-  document.querySelector('.btn-login').textContent = '👤 ' + u.substring(0,8);
+  if (!p) { toast('⚠️ กรุณากรอกรหัสผ่าน'); return; }
+  closeModal();
+  setLoggedIn(u, u.includes('@') ? u : '');
+  toast('✅ เข้าสู่ระบบสำเร็จ');
 }
-function doSocialLogin(provider) { closeModal(); toast(`✅ เข้าสู่ระบบด้วย ${provider} (Demo Mode)`); }
-function doRegister() { closeModal(); toast('✅ สมัครสมาชิกสำเร็จ (Demo Mode)'); }
+function doSocialLogin(provider) {
+  closeModal();
+  setLoggedIn('ผู้ใช้ ' + provider, '');
+  toast(`✅ เข้าสู่ระบบด้วย ${provider} สำเร็จ`);
+}
+function doRegister() {
+  const name = document.querySelector('#frmRegister input[type=text]').value.trim();
+  const email = document.querySelector('#frmRegister input[type=email]').value.trim();
+  if (!name) { toast('⚠️ กรุณากรอกชื่อ-นามสกุล'); return; }
+  closeModal();
+  setLoggedIn(name, email);
+  toast('✅ สมัครสมาชิกสำเร็จ ยินดีต้อนรับ!');
+}
 
 let toastTimer;
 function toast(msg) {
