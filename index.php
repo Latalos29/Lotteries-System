@@ -249,12 +249,6 @@ if ($db) $db->close();
       <div class="form-forgot"><a href="#">ลืมรหัสผ่าน?</a></div>
       <button class="btn-submit" onclick="doLogin()">เข้าสู่ระบบ</button>
       <div class="modal-sep">หรือ</div>
-      <button class="btn-social" onclick="doSocialLogin('Line')">
-        <span>💚</span> เข้าสู่ระบบด้วย LINE
-      </button>
-      <button class="btn-social" onclick="doSocialLogin('Google')">
-        <span>🔵</span> เข้าสู่ระบบด้วย Google
-      </button>
       <div class="modal-switch">
         ยังไม่มีบัญชี? <a onclick="switchTab('register')">สมัครสมาชิกฟรี</a>
       </div>
