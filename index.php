@@ -1,22 +1,72 @@
 <?php
 /* ════════════════════════════════════════════════
-   index.php — LottoShop หน้าหลัก
+   index.php — LottoShop (PHP Only, No JavaScript)
    ════════════════════════════════════════════════ */
+session_start();
 require_once 'config.php';
 
 $db     = getDB();
 $isLive = ($db !== null);
 
-/* ── helper: format draw_date เป็นภาษาไทย ── */
+/* ── helper: format draw_date ── */
 function thDate(string $d): string {
     $thM = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
     $dt  = new DateTime($d);
     return (int)$dt->format('j').' '.$thM[(int)$dt->format('n')].' '.(((int)$dt->format('Y'))+543);
 }
 
-/* ════════════════════════════════════════════════
-   หางวดล่าสุด (draw_date สูงสุด) ที่มีลอตเตอรี่ขายอยู่จริง
-   ════════════════════════════════════════════════ */
+/* ════════════════════
+   LOGIN / LOGOUT / REGISTER (PHP Session)
+   ════════════════════ */
+/* logout จาก index (profile dropdown) */
+if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['do_logout'])) {
+    $_SESSION=[]; session_destroy();
+    header('Location: index.php'); exit;
+}
+
+$user     = $_SESSION['user'] ?? null;
+$loggedIn = ($user !== null);
+
+/* ════════════════════
+   CART (PHP Session)
+   ════════════════════ */
+if (!isset($_SESSION['cart'])) $_SESSION['cart'] = [];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['add_to_cart'])) {
+        $lid   = htmlspecialchars($_POST['lottery_id']     ?? '');
+        $lnum  = htmlspecialchars($_POST['lottery_number'] ?? '');
+        $lprice= (int)($_POST['lottery_price']  ?? 0);
+        $ldate = htmlspecialchars($_POST['lottery_date']   ?? '');
+        if ($lid && !isset($_SESSION['cart'][$lid])) {
+            $_SESSION['cart'][$lid] = ['id'=>$lid,'number'=>$lnum,'price'=>$lprice,'date'=>$ldate];
+        }
+        header('Location: index.php?' . http_build_query(array_filter([
+            'q'=>$_POST['q']??'','status'=>$_POST['status']??'','draw_id'=>$_POST['draw_id']??'','cart'=>'open'
+        ])));
+        exit;
+    }
+    if (isset($_POST['remove_from_cart'])) {
+        $lid = $_POST['remove_id'] ?? '';
+        unset($_SESSION['cart'][$lid]);
+        header('Location: index.php?cart=open');
+        exit;
+    }
+    if (isset($_POST['do_checkout'])) {
+        $_SESSION['cart'] = [];
+        header('Location: index.php?msg=checkout');
+        exit;
+    }
+}
+
+$cartOpen  = ($_GET['cart'] ?? '') === 'open';
+$cartItems = $_SESSION['cart'] ?? [];
+$cartTotal = array_sum(array_column($cartItems, 'price'));
+$cartCount = count($cartItems);
+
+/* ════════════════════
+   งวดล่าสุด
+   ════════════════════ */
 $latestDate   = null;
 $latestDrawId = null;
 $latestDrawTh = '—';
@@ -24,12 +74,9 @@ $latestDrawTh = '—';
 if ($isLive) {
     $rL = $db->query(
         "SELECT d.draw_date, MIN(d.draw_id) AS draw_id
-         FROM draws d
-         INNER JOIN lotteries l ON l.draw_id = d.draw_id
-         WHERE d.status = 'open'
-         GROUP BY d.draw_date
-         ORDER BY d.draw_date DESC
-         LIMIT 1"
+         FROM draws d INNER JOIN lotteries l ON l.draw_id = d.draw_id
+         WHERE d.status='open'
+         GROUP BY d.draw_date ORDER BY d.draw_date DESC LIMIT 1"
     );
     if ($rowL = $rL->fetch_assoc()) {
         $latestDate   = $rowL['draw_date'];
@@ -46,36 +93,79 @@ if ($isLive) {
     if ($latestDate) $latestDrawTh = thDate($latestDate);
 }
 
-/* ════════════════════════════════════════════════
-   Stats — นับเฉพาะงวดล่าสุด
-   ════════════════════════════════════════════════ */
-$stats = ['available'=>0,'sold'=>0,'reserved'=>0];
+/* ════════════════════
+   FILTER จาก GET
+   ════════════════════ */
+$q       = trim($_GET['q']       ?? '');
+$status  = trim($_GET['status']  ?? 'available');
+$drawId  = trim($_GET['draw_id'] ?? $latestDrawId ?? '');
 
-if ($isLive && $latestDate) {
-    $rS = $db->prepare(
-        "SELECT l.status, COUNT(*) c
-         FROM lotteries l
-         INNER JOIN draws d ON l.draw_id = d.draw_id
-         WHERE d.draw_date = ? AND d.status = 'open'
-         GROUP BY l.status"
-    );
-    $rS->bind_param('s', $latestDate);
-    $rS->execute();
-    $resS = $rS->get_result();
-    while ($row = $resS->fetch_assoc()) {
-        $key = $row['status'];
-        if (isset($stats[$key])) $stats[$key] = (int)$row['c'];
+/* ════════════════════
+   ดึงลอตเตอรี่
+   ════════════════════ */
+$lotteries = [];
+
+if ($isLive) {
+    /* หา draw_date จาก draw_id ที่เลือก เพื่อดึงทุก draw_id ในงวดเดียวกัน */
+    $filterDate = $latestDate;
+    if ($drawId) {
+        $stmtD = $db->prepare("SELECT draw_date FROM draws WHERE draw_id=? LIMIT 1");
+        $stmtD->bind_param('s',$drawId);
+        $stmtD->execute();
+        $rd = $stmtD->get_result()->fetch_assoc();
+        if ($rd) $filterDate = $rd['draw_date'];
+        $stmtD->close();
     }
-    $rS->close();
-} elseif (!$isLive) {
-    foreach (getDemoData() as $l) {
-        if ($l['draw_date'] === $latestDate && isset($stats[$l['status']])) {
-            $stats[$l['status']]++;
-        }
+
+    $sql    = "SELECT l.lottery_id,l.lotteryNumber,l.price,l.status,d.draw_date
+               FROM lotteries l LEFT JOIN draws d ON l.draw_id=d.draw_id WHERE 1=1";
+    $params = []; $types = '';
+
+    if ($q !== '') {
+        $sql .= " AND CAST(l.lotteryNumber AS CHAR) LIKE ?";
+        $params[] = "%$q%"; $types .= 's';
     }
+    if ($filterDate) {
+        $sql .= " AND d.draw_date=?";
+        $params[] = $filterDate; $types .= 's';
+    }
+    if ($status !== 'all') {
+        $sql .= " AND l.status=?";
+        $params[] = $status; $types .= 's';
+    }
+    $sql .= " ORDER BY l.lotteryNumber ASC LIMIT 200";
+
+    $stmt = $db->prepare($sql);
+    if ($types) $stmt->bind_param($types,...$params);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) $lotteries[] = $row;
+    $stmt->close();
+
+} else {
+    $lotteries = getDemoData();
+    if ($q !== '')        $lotteries = array_values(array_filter($lotteries, fn($l)=>str_contains((string)$l['lotteryNumber'],$q)));
+    if ($status !== 'all') $lotteries = array_values(array_filter($lotteries, fn($l)=>$l['status']===$status));
 }
 
+$lotteryCount = count($lotteries);
+
 if ($db) $db->close();
+
+/* ════════════════════
+   ข้อความแจ้งเตือน
+   ════════════════════ */
+$flashMsg = '';
+if (($_GET['msg'] ?? '') === 'checkout') $flashMsg = '✅ บันทึกคำสั่งซื้อเรียบร้อยแล้ว';
+
+/* ════════════════════
+   Avatar initial
+   ════════════════════ */
+function avatarInitial(string $name): string {
+    // UTF-8 safe first char
+    preg_match('/./u', $name, $m);
+    return strtoupper($m[0] ?? '?');
+}
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -90,7 +180,11 @@ if ($db) $db->close();
 <div class="bg-glow"></div>
 <div class="bg-dots"></div>
 
-<!-- ══════════════════ HEADER ══════════════════ -->
+<?php if ($flashMsg): ?>
+<div class="flash-msg"><?= htmlspecialchars($flashMsg) ?></div>
+<?php endif; ?>
+
+<!-- ══════════ HEADER ══════════ -->
 <header>
   <div class="hdr">
 
@@ -103,55 +197,56 @@ if ($db) $db->close();
 
     <nav class="nav">
       <a href="index.php" class="active">หน้าแรก</a>
-      <a href="#">ผลรางวัล</a>
+      <a href="###">ผลรางวัล</a>
     </nav>
 
     <div class="hdr-right">
-      <!-- แสดงเมื่อยังไม่ login -->
-      <div id="guestButtons">
-        <button class="btn-login" onclick="openModal('login')">เข้าสู่ระบบ</button>
-        <button class="btn-register" onclick="openModal('register')">สมัครสมาชิก</button>
-      </div>
-
-      <!-- แสดงเมื่อ login แล้ว -->
-      <div class="profile-wrap" id="profileWrap" style="display:none">
-        <button class="profile-btn" onclick="toggleProfileMenu()">
-          <div class="avatar" id="avatarCircle">?</div>
-          <span class="profile-name" id="profileName">ผู้ใช้</span>
-          <svg class="chevron" width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
-        </button>
-        <div class="profile-menu" id="profileMenu">
-          <div class="profile-menu-header">
-            <div class="avatar-lg" id="avatarCircleLg">?</div>
-            <div>
-              <div class="pm-name" id="pmName">ผู้ใช้</div>
-              <div class="pm-email" id="pmEmail">—</div>
-            </div>
+      <?php if ($loggedIn): ?>
+        <!-- Profile -->
+        <div class="profile-wrap">
+          <div class="profile-display">
+            <div class="avatar"><?= htmlspecialchars(avatarInitial($user['name'])) ?></div>
+            <span class="profile-name"><?= htmlspecialchars(mb_substr($user['name'],0,10)) ?></span>
           </div>
-          <div class="profile-menu-divider"></div>
-          <a class="pm-item" href="#">👤 โปรไฟล์ของฉัน</a>
-          <a class="pm-item" href="#">🎟 ประวัติการซื้อ</a>
-          <a class="pm-item" href="#">⚙️ ตั้งค่าบัญชี</a>
-          <div class="profile-menu-divider"></div>
-          <button class="pm-item pm-logout" onclick="doLogout()">🚪 ออกจากระบบ</button>
+          <div class="profile-menu-inline">
+            <div class="profile-menu-header">
+              <div class="avatar-lg"><?= htmlspecialchars(avatarInitial($user['name'])) ?></div>
+              <div>
+                <div class="pm-name"><?= htmlspecialchars($user['name']) ?></div>
+                <div class="pm-email"><?= htmlspecialchars($user['email'] ?: '—') ?></div>
+              </div>
+            </div>
+            <div class="profile-menu-divider"></div>
+            <a class="pm-item" href="###">👤 โปรไฟล์ของฉัน</a>
+            <a class="pm-item" href="###">🛒 ตะกร้าสินค้า</a>
+            <a class="pm-item" href="###">🎟 ผลรางวัล</a>
+            <div class="profile-menu-divider"></div>
+            <form method="POST">
+              <button name="do_logout" class="pm-item pm-logout" type="submit">🚪 ออกจากระบบ</button>
+            </form>
+          </div>
         </div>
-      </div>
+      <?php else: ?>
+        <a href="###" class="btn-login">เข้าสู่ระบบ</a>
+        <a href="###" class="btn-register">สมัครสมาชิก</a>
+      <?php endif; ?>
 
-      <button class="btn-cart" onclick="openCart()" title="ตะกร้า">
-        🛒<span class="cart-dot" id="cartDot">0</span>
-      </button>
+      <a href="###" class="btn-cart" title="ตะกร้า">
+        🛒<?php if ($cartCount > 0): ?>
+          <span class="cart-dot show"><?= $cartCount ?></span>
+        <?php endif; ?>
+      </a>
     </div>
 
   </div>
 </header>
 
-<!-- ══════════════════ HERO ══════════════════ -->
+<!-- ══════════ HERO ══════════ -->
 <section class="hero">
   <div class="hero-eyebrow">
     <span class="pulse-dot"></span>
     จำหน่ายลอตเตอรี่งวด <?= htmlspecialchars($latestDrawTh) ?>
   </div>
-
   <h1>
     <span class="line1">ลอตเตอรี่รัฐบาลไทย</span>
     <span class="line2">ราคาเป็นทางการ ส่งตรงถึงมือ</span>
@@ -159,458 +254,121 @@ if ($db) $db->close();
   <p class="hero-sub">เลือกเลขโชค สั่งซื้อง่าย รับรองของแท้ทุกใบ</p>
 
   <div class="stats-bar">
-    <div class="stat">
-      <span class="stat-l">รางวัลที่ 1</span>
-      <span class="stat-v">6,000,000 ฿</span>
-    </div>
-    <div class="stat">
-      <span class="stat-l">รางวัลที่ 2</span>
-      <span class="stat-v">200,000 ฿</span>
-    </div>
-    <div class="stat">
-      <span class="stat-l">รางวัลที่ 3</span>
-      <span class="stat-v">80,000 ฿</span>
-    </div>
-    <div class="stat">
-      <span class="stat-l">งวดออกรางวัล</span>
-      <span class="stat-v"><?= htmlspecialchars($latestDrawTh) ?></span>
-    </div>
-    <div class="stat">
-      <span class="stat-l">ราคา/ใบ</span>
-      <span class="stat-v">120 ฿</span>
-    </div>
+    <div class="stat"><span class="stat-l">รางวัลที่ 1</span><span class="stat-v">6,000,000 ฿</span></div>
+    <div class="stat"><span class="stat-l">รางวัลที่ 2</span><span class="stat-v">200,000 ฿</span></div>
+    <div class="stat"><span class="stat-l">รางวัลที่ 3</span><span class="stat-v">80,000 ฿</span></div>
+    <div class="stat"><span class="stat-l">งวดออกรางวัล</span><span class="stat-v"><?= htmlspecialchars($latestDrawTh) ?></span></div>
+    <div class="stat"><span class="stat-l">ราคา/ใบ</span><span class="stat-v">120 ฿</span></div>
   </div>
 </section>
 
-<!-- ══════════════════ SEARCH ══════════════════ -->
+<!-- ══════════ SEARCH ══════════ -->
 <div class="search-section">
-  <div class="search-card">
+  <form method="GET" action="index.php" class="search-card">
     <div class="search-row">
       <span class="search-ico">🔍</span>
-      <input
-        type="text" id="searchInput"
-        placeholder="พิมพ์ตัวเลขเพื่อค้นหาทันที เช่น 123, 56, 999..."
-        autocomplete="off"
-      >
-      <span class="search-status" id="searchStatus">กำลังโหลด...</span>
+      <input type="text" name="q" value="<?= htmlspecialchars($q) ?>"
+             placeholder="พิมพ์ตัวเลขเพื่อค้นหา เช่น 123, 56, 999...">
+      <button type="submit" class="btn-search">ค้นหา</button>
     </div>
 
     <div class="search-divider"></div>
 
     <div class="filter-row">
-      <span class="filter-lbl">งวด :</span>
-      <span class="chip on" data-draw="<?= htmlspecialchars($latestDrawId ?? '') ?>">
-        งวด <?= htmlspecialchars($latestDrawTh) ?>
-      </span>
+      <span class="filter-lbl">สถานะ :</span>
+      <?php foreach (['available'=>'ว่างอยู่','reserved'=>'จองแล้ว','all'=>'ทั้งหมด'] as $val=>$lbl): ?>
+        <a href="?<?= http_build_query(['q'=>$q,'status'=>$val,'draw_id'=>$drawId]) ?>"
+           class="chip <?= $status===$val?'on':'' ?>"><?= $lbl ?></a>
+      <?php endforeach; ?>
 
-      <span class="filter-lbl" style="margin-left:14px;">สถานะ :</span>
-      <span class="chip on" data-status="available">ว่างอยู่</span>
-      <span class="chip"    data-status="reserved">จองแล้ว</span>
-      <span class="chip"    data-status="all">ทั้งหมด</span>
+      <?php if ($q): ?>
+        <a href="?status=<?= urlencode($status) ?>" class="chip chip-clear">✕ ล้างการค้นหา</a>
+      <?php endif; ?>
+
+      <span class="search-status" style="margin-left:auto">
+        พบ <?= $lotteryCount ?> รายการ (<?= $isLive?'DB':'Demo' ?>)
+      </span>
     </div>
-  </div>
+  </form>
 </div>
 
-<!-- ══════════════════ GRID ══════════════════ -->
+<!-- ══════════ GRID ══════════ -->
 <main class="main-wrap">
   <div class="sec-bar">
     <div class="sec-title">
       🎟 ลอตเตอรี่งวด <?= htmlspecialchars($latestDrawTh) ?>
-      <span class="count-badge" id="countBadge">—</span>
+      <span class="count-badge"><?= $lotteryCount ?> ใบ</span>
     </div>
-    <div class="db-badge <?= $isLive ? 'live' : 'demo' ?>">
+    <div class="db-badge <?= $isLive?'live':'demo' ?>">
       <span class="blink"></span>
       <?= $isLive ? 'Live DB' : 'Demo Mode' ?>
     </div>
   </div>
 
-  <div class="grid" id="lotteryGrid">
-    <?php for($i=0;$i<8;$i++): ?><div class="skel-card"></div><?php endfor; ?>
+  <?php if (empty($lotteries)): ?>
+    <div class="empty-state">
+      <span class="empty-ico">🎟</span>
+      <p>ไม่พบลอตเตอรี่ที่ตรงกับการค้นหา</p>
+    </div>
+  <?php else: ?>
+  <div class="grid">
+    <?php foreach ($lotteries as $l):
+      $num      = str_pad($l['lotteryNumber'], 6, '0', STR_PAD_LEFT);
+      $price    = (int)$l['price'];
+      $sold     = $l['status'] === 'sold';
+      $rsv      = $l['status'] === 'reserved';
+      $inCart   = isset($cartItems[$l['lottery_id']]);
+      $drawLabel= $l['draw_date'] ? thDate($l['draw_date']) : '—';
+    ?>
+    <div class="card <?= $sold?'card-sold':'' ?> <?= $rsv?'card-reserved':'' ?>">
+      <div class="ticket">
+        <div class="t-period">งวด <?= htmlspecialchars($drawLabel) ?></div>
+        <div class="t-number"><?= htmlspecialchars($num) ?></div>
+        <div class="t-id">ID: <?= htmlspecialchars($l['lottery_id']) ?></div>
+        <?php if ($sold): ?>
+          <span class="stag stag-sold">❌ จำหน่ายแล้ว</span>
+        <?php elseif ($rsv): ?>
+          <span class="stag stag-reserved">🔒 จองแล้ว</span>
+        <?php else: ?>
+          <span class="stag stag-ok">✅ ว่างอยู่</span>
+        <?php endif; ?>
+        <div class="notch l"></div>
+        <div class="notch r"></div>
+      </div>
+      <div class="cbody">
+        <div class="crow">
+          <div class="price">฿<?= number_format($price) ?><span>/ใบ</span></div>
+        </div>
+        <?php if ($sold || $rsv): ?>
+          <button class="btn-add" disabled>— ไม่ว่าง —</button>
+        <?php elseif ($inCart): ?>
+          <button class="btn-add in-cart" disabled>✓ อยู่ในตะกร้าแล้ว</button>
+        <?php else: ?>
+          <form method="POST">
+            <input type="hidden" name="lottery_id"     value="<?= htmlspecialchars($l['lottery_id']) ?>">
+            <input type="hidden" name="lottery_number" value="<?= htmlspecialchars($num) ?>">
+            <input type="hidden" name="lottery_price"  value="<?= $price ?>">
+            <input type="hidden" name="lottery_date"   value="<?= htmlspecialchars($drawLabel) ?>">
+            <input type="hidden" name="q"              value="<?= htmlspecialchars($q) ?>">
+            <input type="hidden" name="status"         value="<?= htmlspecialchars($status) ?>">
+            <input type="hidden" name="draw_id"        value="<?= htmlspecialchars($drawId) ?>">
+            <button type="submit" name="add_to_cart" class="btn-add">🛒 หยิบใส่ตะกร้า</button>
+          </form>
+        <?php endif; ?>
+      </div>
+    </div>
+    <?php endforeach; ?>
   </div>
+  <?php endif; ?>
 </main>
 
-<!-- ══════════════════ CART SIDEBAR ══════════════════ -->
-<div class="overlay" id="overlay" onclick="closeCart()"></div>
-<aside class="sidebar" id="sidebar">
-  <div class="sb-hdr">
-    <h3>🛒 ตะกร้าของฉัน</h3>
-    <button class="btn-x" onclick="closeCart()">×</button>
-  </div>
-  <div class="sb-body" id="sbBody">
-    <div class="sb-empty">
-      <span class="sb-empty-ico">🎟</span>
-      <p>ยังไม่มีรายการในตะกร้า</p>
-    </div>
-  </div>
-  <div class="sb-foot">
-    <div class="total-row">
-      <span class="tl">รวม (<span id="sbCount">0</span> ใบ)</span>
-      <span class="tv" id="sbTotal">฿0</span>
-    </div>
-    <button class="btn-checkout" id="btnCheckout" disabled onclick="checkout()">
-      ชำระเงิน →
-    </button>
-  </div>
-</aside>
-
-<!-- ══════════════════ LOGIN MODAL ══════════════════ -->
-<div class="modal-bg" id="authModal" onclick="closeModalOutside(event)">
-  <div class="modal" id="authBox">
-    <button class="modal-close" onclick="closeModal()">×</button>
-
-    <div class="modal-logo">
-      <h2>LottoShop</h2>
-      <p id="modalDesc">เข้าสู่ระบบเพื่อซื้อลอตเตอรี่</p>
-    </div>
-
-    <div class="tab-row">
-      <button class="tab-btn on" id="tabLogin"    onclick="switchTab('login')">เข้าสู่ระบบ</button>
-      <button class="tab-btn"    id="tabRegister" onclick="switchTab('register')">สมัครสมาชิก</button>
-    </div>
-
-    <!-- ── Login Form ── -->
-    <div id="frmLogin">
-      <div class="form-group">
-        <label>เบอร์โทรศัพท์ / อีเมล</label>
-        <input type="text" id="loginUser" placeholder="กรอกเบอร์หรืออีเมล">
-      </div>
-      <div class="form-group">
-        <label>รหัสผ่าน</label>
-        <input type="password" id="loginPass" placeholder="••••••••">
-      </div>
-      <div class="form-forgot"><a href="#">ลืมรหัสผ่าน?</a></div>
-      <button class="btn-submit" onclick="doLogin()">เข้าสู่ระบบ</button>
-      <div class="modal-sep">หรือ</div>
-      <button class="btn-social" onclick="doSocialLogin('Line')">
-        <span>💚</span> เข้าสู่ระบบด้วย LINE
-      </button>
-      <button class="btn-social" onclick="doSocialLogin('Google')">
-        <span>🔵</span> เข้าสู่ระบบด้วย Google
-      </button>
-      <div class="modal-switch">
-        ยังไม่มีบัญชี? <a onclick="switchTab('register')">สมัครสมาชิกฟรี</a>
-      </div>
-    </div>
-
-    <!-- ── Register Form ── -->
-    <div id="frmRegister" style="display:none">
-      <div class="form-group">
-        <label>ชื่อ-นามสกุล</label>
-        <input type="text" placeholder="กรอกชื่อ-นามสกุล">
-      </div>
-      <div class="form-group">
-        <label>เบอร์โทรศัพท์</label>
-        <input type="tel" placeholder="0xx-xxx-xxxx">
-      </div>
-      <div class="form-group">
-        <label>อีเมล</label>
-        <input type="email" placeholder="example@email.com">
-      </div>
-      <div class="form-group">
-        <label>รหัสผ่าน</label>
-        <input type="password" placeholder="อย่างน้อย 8 ตัวอักษร">
-      </div>
-      <button class="btn-submit" onclick="doRegister()">สมัครสมาชิก</button>
-      <div class="modal-switch">
-        มีบัญชีแล้ว? <a onclick="switchTab('login')">เข้าสู่ระบบ</a>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- ══════════════════ TOAST ══════════════════ -->
-<div class="toast" id="toast"></div>
-
-<!-- ══════════════════ FOOTER ══════════════════ -->
+<!-- ══════════ FOOTER ══════════ -->
 <footer>
   <p class="gold" style="font-family:'Kanit',sans-serif;font-size:20px;margin-bottom:6px;">LottoShop</p>
   <p>ลอตเตอรี่รัฐบาลไทย งวด <?= htmlspecialchars($latestDrawTh) ?></p>
   <p>จำหน่ายในราคาอย่างเป็นทางการเท่านั้น &nbsp;|&nbsp; DB: <span class="gold">lottery-system</span></p>
   <p>ติดต่อ</p>
 </footer>
-
-<!-- ══════════════════ JAVASCRIPT ══════════════════ -->
-<script>
-/* ── State ── */
-let cart     = [];
-let debounce = null;
-
-const LATEST_DRAW_ID = '<?= htmlspecialchars($latestDrawId ?? '', ENT_QUOTES) ?>';
-
-let currentFilter = {
-  draw:   LATEST_DRAW_ID,
-  status: 'available'
-};
-
-/* ════════════════════════════════════
-   SEARCH & FETCH (Realtime)
-   ════════════════════════════════════ */
-function fetchLotteries(q = '') {
-  const { draw, status } = currentFilter;
-  const url = `api_search.php?q=${encodeURIComponent(q)}&draw_id=${encodeURIComponent(draw)}&status=${encodeURIComponent(status)}`;
-
-  document.getElementById('searchStatus').textContent = 'กำลังค้นหา...';
-
-  fetch(url)
-    .then(r => r.json())
-    .then(json => {
-      renderGrid(json.data ?? []);
-      const src = json.source === 'db' ? 'DB' : 'Demo';
-      document.getElementById('countBadge').textContent   = (json.count ?? 0) + ' ใบ';
-      document.getElementById('searchStatus').textContent = `พบ ${json.count ?? 0} รายการ (${src})`;
-    })
-    .catch(() => {
-      document.getElementById('searchStatus').textContent = 'เกิดข้อผิดพลาด';
-      document.getElementById('lotteryGrid').innerHTML =
-        '<div class="empty-state"><span class="empty-ico">⚠️</span><p>ไม่สามารถโหลดข้อมูลได้</p></div>';
-    });
-}
-
-document.getElementById('searchInput').addEventListener('input', function () {
-  clearTimeout(debounce);
-  debounce = setTimeout(() => fetchLotteries(this.value.trim()), 250);
-});
-
-/* ════════════════════════════════════
-   RENDER CARDS
-   ════════════════════════════════════ */
-function renderGrid(items) {
-  const grid = document.getElementById('lotteryGrid');
-  if (!items.length) {
-    grid.innerHTML = '<div class="empty-state"><span class="empty-ico">🎟</span><p>ไม่พบลอตเตอรี่ที่ตรงกับการค้นหา</p></div>';
-    return;
-  }
-
-  grid.innerHTML = items.map(l => {
-    const num    = String(l.lotteryNumber).padStart(6, '0');
-    const price  = parseInt(l.price);
-    const sold   = l.status === 'sold';
-    const rsv    = l.status === 'reserved';
-    const inCart = cart.some(c => c.lottery_id === l.lottery_id);
-
-    let drawLabel = '—';
-    if (l.draw_date) {
-      try {
-        const d  = new Date(l.draw_date + 'T00:00:00');
-        const th = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-        drawLabel = d.getDate() + ' ' + th[d.getMonth()+1] + ' ' + (d.getFullYear()+543);
-      } catch(e) { drawLabel = l.draw_date; }
-    }
-
-    let stag = sold
-      ? '<span class="stag stag-sold">❌ จำหน่ายแล้ว</span>'
-      : rsv
-        ? '<span class="stag stag-reserved">🔒 จองแล้ว</span>'
-        : '<span class="stag stag-ok">✅ ว่างอยู่</span>';
-
-    let btn = '';
-    if (sold || rsv) {
-      btn = `<button class="btn-add" disabled>— ไม่ว่าง —</button>`;
-    } else if (inCart) {
-      btn = `<button class="btn-add in-cart" disabled>✓ อยู่ในตะกร้าแล้ว</button>`;
-    } else {
-      btn = `<button class="btn-add"
-               onclick="addToCart('${l.lottery_id}','${num}',${price},'${drawLabel}')">
-               🛒 หยิบใส่ตะกร้า</button>`;
-    }
-
-    return `
-      <div class="card ${sold?'card-sold':''} ${rsv?'card-reserved':''}" id="card-${l.lottery_id}">
-        <div class="ticket">
-          <div class="t-period">งวด ${drawLabel}</div>
-          <div class="t-number">${num}</div>
-          <div class="t-id">ID: ${l.lottery_id}</div>
-          ${stag}
-          <div class="notch l"></div>
-          <div class="notch r"></div>
-        </div>
-        <div class="cbody">
-          <div class="crow">
-            <div class="price">฿${price.toLocaleString()}<span>/ใบ</span></div>
-          </div>
-          ${btn}
-        </div>
-      </div>`;
-  }).join('');
-}
-
-/* ════════════════════════════════════
-   FILTER CHIPS
-   ════════════════════════════════════ */
-document.querySelectorAll('[data-draw]').forEach(c => {
-  c.addEventListener('click', () => {
-    document.querySelectorAll('[data-draw]').forEach(x => x.classList.remove('on'));
-    c.classList.add('on');
-    currentFilter.draw = c.dataset.draw;
-    fetchLotteries(document.getElementById('searchInput').value.trim());
-  });
-});
-
-document.querySelectorAll('[data-status]').forEach(c => {
-  c.addEventListener('click', () => {
-    document.querySelectorAll('[data-status]').forEach(x => x.classList.remove('on'));
-    c.classList.add('on');
-    currentFilter.status = c.dataset.status;
-    fetchLotteries(document.getElementById('searchInput').value.trim());
-  });
-});
-
-/* ════════════════════════════════════
-   CART
-   ════════════════════════════════════ */
-function addToCart(id, num, price, drawDate) {
-  if (cart.find(c => c.lottery_id === id)) return;
-  cart.push({ lottery_id: id, lotteryNumber: num, price, draw_date: drawDate });
-  updateCartUI();
-  const card = document.getElementById('card-' + id);
-  if (card) {
-    const btn = card.querySelector('.btn-add');
-    if (btn) { btn.disabled = true; btn.textContent = '✓ อยู่ในตะกร้าแล้ว'; btn.classList.add('in-cart'); }
-  }
-  toast(`✅ เพิ่ม ${num} ลงตะกร้าแล้ว`);
-  openCart();
-}
-
-function removeFromCart(id) {
-  cart = cart.filter(c => c.lottery_id !== id);
-  updateCartUI();
-  const card = document.getElementById('card-' + id);
-  if (card) {
-    const btn = card.querySelector('.btn-add');
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = '🛒 หยิบใส่ตะกร้า';
-      btn.classList.remove('in-cart');
-      const num   = card.querySelector('.t-number').textContent.trim();
-      const price = parseInt(card.querySelector('.price').textContent.replace(/[฿,\/ใบ\s]/g,''));
-      const draw  = card.querySelector('.t-period').textContent.replace('งวด ','').trim();
-      btn.onclick = () => addToCart(id, num, price, draw);
-    }
-  }
-  toast('🗑️ นำรายการออกจากตะกร้าแล้ว');
-}
-
-function updateCartUI() {
-  const count = cart.length;
-  const total = cart.reduce((s, i) => s + i.price, 0);
-  const dot = document.getElementById('cartDot');
-  dot.textContent = count;
-  dot.classList.toggle('show', count > 0);
-  document.getElementById('sbCount').textContent = count;
-  document.getElementById('sbTotal').textContent = '฿' + total.toLocaleString();
-  document.getElementById('btnCheckout').disabled = count === 0;
-  const body = document.getElementById('sbBody');
-  if (!count) {
-    body.innerHTML = '<div class="sb-empty"><span class="sb-empty-ico">🎟</span><p>ยังไม่มีรายการในตะกร้า</p></div>';
-    return;
-  }
-  body.innerHTML = cart.map(it => `
-    <div class="sb-item">
-      <div style="flex:1">
-        <div class="sb-num">${it.lotteryNumber}</div>
-        <div class="sb-meta">งวด ${it.draw_date}</div>
-      </div>
-      <div class="sb-price">฿${it.price.toLocaleString()}</div>
-      <button class="btn-del" onclick="removeFromCart('${it.lottery_id}')" title="ลบ">×</button>
-    </div>`).join('');
-}
-
-function openCart()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
-function closeCart() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
-
-function checkout() {
-  const total = cart.reduce((s,i)=>s+i.price,0);
-  const nums  = cart.map(i=>i.lotteryNumber).join(', ');
-  alert(`✅ สรุปคำสั่งซื้อ\n\nเลขที่เลือก: ${nums}\nรวม: ฿${total.toLocaleString()}\n\n(Demo — กรุณาเชื่อมต่อ Payment Gateway ในระบบจริง)`);
-  cart = []; updateCartUI();
-  document.querySelectorAll('.btn-add.in-cart').forEach(b => { b.disabled=false; b.innerHTML='🛒 หยิบใส่ตะกร้า'; b.classList.remove('in-cart'); });
-  closeCart(); toast('✅ บันทึกคำสั่งซื้อแล้ว');
-}
-
-function openModal(tab = 'login') { document.getElementById('authModal').classList.add('open'); switchTab(tab); }
-function closeModal() { document.getElementById('authModal').classList.remove('open'); }
-function closeModalOutside(e) { if (e.target === document.getElementById('authModal')) closeModal(); }
-
-function switchTab(tab) {
-  const isLogin = tab === 'login';
-  document.getElementById('frmLogin').style.display    = isLogin ? 'block' : 'none';
-  document.getElementById('frmRegister').style.display = isLogin ? 'none'  : 'block';
-  document.getElementById('tabLogin').classList.toggle('on',  isLogin);
-  document.getElementById('tabRegister').classList.toggle('on', !isLogin);
-  document.getElementById('modalDesc').textContent = isLogin ? 'เข้าสู่ระบบเพื่อซื้อลอตเตอรี่' : 'สร้างบัญชีใหม่ฟรี — ง่ายและรวดเร็ว';
-}
-
-/* ── Auth state ── */
-let currentUser = null;
-
-function setLoggedIn(username, email='') {
-  currentUser = { name: username, email: email };
-  const initial = username.charAt(0).toUpperCase();
-  // avatar initials
-  document.getElementById('avatarCircle').textContent   = initial;
-  document.getElementById('avatarCircleLg').textContent = initial;
-  document.getElementById('profileName').textContent    = username.length > 10 ? username.substring(0,10)+'…' : username;
-  document.getElementById('pmName').textContent         = username;
-  document.getElementById('pmEmail').textContent        = email || '—';
-  // toggle visibility
-  document.getElementById('guestButtons').style.display  = 'none';
-  document.getElementById('profileWrap').style.display   = 'flex';
-}
-
-function doLogout() {
-  currentUser = null;
-  document.getElementById('guestButtons').style.display  = '';
-  document.getElementById('profileWrap').style.display   = 'none';
-  closeProfileMenu();
-  toast('👋 ออกจากระบบแล้ว');
-}
-
-function toggleProfileMenu() {
-  document.getElementById('profileMenu').classList.toggle('open');
-}
-function closeProfileMenu() {
-  document.getElementById('profileMenu').classList.remove('open');
-}
-// ปิด dropdown เมื่อคลิกข้างนอก
-document.addEventListener('click', e => {
-  const wrap = document.getElementById('profileWrap');
-  if (wrap && !wrap.contains(e.target)) closeProfileMenu();
-});
-
-function doLogin() {
-  const u = document.getElementById('loginUser').value.trim();
-  const p = document.getElementById('loginPass').value.trim();
-  if (!u) { toast('⚠️ กรุณากรอกเบอร์หรืออีเมล'); return; }
-  if (!p) { toast('⚠️ กรุณากรอกรหัสผ่าน'); return; }
-  closeModal();
-  setLoggedIn(u, u.includes('@') ? u : '');
-  toast('✅ เข้าสู่ระบบสำเร็จ');
-}
-function doSocialLogin(provider) {
-  closeModal();
-  setLoggedIn('ผู้ใช้ ' + provider, '');
-  toast(`✅ เข้าสู่ระบบด้วย ${provider} สำเร็จ`);
-}
-function doRegister() {
-  const name = document.querySelector('#frmRegister input[type=text]').value.trim();
-  const email = document.querySelector('#frmRegister input[type=email]').value.trim();
-  if (!name) { toast('⚠️ กรุณากรอกชื่อ-นามสกุล'); return; }
-  closeModal();
-  setLoggedIn(name, email);
-  toast('✅ สมัครสมาชิกสำเร็จ ยินดีต้อนรับ!');
-}
-
-let toastTimer;
-function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
-}
-
-fetchLotteries();
-</script>
 
 </body>
 </html>
