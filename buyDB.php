@@ -1,16 +1,13 @@
 <?php
 
-    $host = 'localhost';
-    $userName = 'root';
-    $password = '';
-    $dbName = 'lottery';
+    $host = "localhost";
+    $user = "root";
+    $pass = "";
+    $db   = "lottery";
 
-    $conn = new mysqli($host, $userName, $password, $dbName);
+    $conn = mysqli_connect($host, $user, $pass, $db);
 
-    if(!$conn){
-        die("Connection failed: ");
+    if (!$conn) {
+        die("Connection failed: " . mysqli_connect_error());
     }
-
-    
-
 ?>
