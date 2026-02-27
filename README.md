@@ -6,12 +6,11 @@
 
 main
     - buyLottery.php
-
 connect
     - buyLottery.php ==> buyAlert.php 
-
 Database
-    -buyDB
+    - buyDB
+    - export มาเป็น table นะครับ เลือก database และ import ได้เลย
 
 จัดการข้อมูลและเก็บลง DataBase ที่ buyAlert.php 
 ิbuy.css เป็นไฟล์ตกแต่หน้าเว็บ
