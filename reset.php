@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once "config.php";
+require_once "logconfig.php";
 
 $conn = getDB();   // ⭐ เพิ่มบรรทัดนี้
 
@@ -143,5 +143,6 @@ if (isset($_POST['reset'])) {
     </div>
 
 </body>
+
 
 </html>
