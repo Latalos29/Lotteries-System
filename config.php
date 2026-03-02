@@ -7,12 +7,12 @@ function getDB() {
 
     $conn = new mysqli($host, $user, $pass, $db);
 
+}
     function getDB(): ?mysqli {
     $conn = @new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
     if ($conn->connect_error) return null;
     $conn->set_charset('utf8mb4');
     return $conn;
-}
 
     if ($conn->connect_error) {
         return null;
@@ -26,3 +26,4 @@ function getDB() {
 }
 
 ?>
+
