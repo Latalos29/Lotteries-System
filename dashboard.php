@@ -1,6 +1,6 @@
 <?php
 session_start();        // ⭐ เพิ่มบรรทัดนี้
-require_once "config.php";
+require_once "logconfig.php";
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
@@ -74,5 +74,6 @@ if (!isset($_SESSION['user_id'])) {
     </div>
 
 </body>
+
 
 </html>
