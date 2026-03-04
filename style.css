@@ -460,3 +460,248 @@ footer .gold{color:#fff;font-weight:700}
   .t-number{font-size:28px;letter-spacing:4px}
   .modal{padding:28px 20px}
 }
+/* ════════════════════════════════════════════════
+   ส่วนเพิ่มเติม — index.php extras
+   ════════════════════════════════════════════════ */
+
+/* ── ปุ่ม Search / Clear ── */
+.btn-search{
+  padding:0 18px;height:42px;border:none;border-radius:8px;
+  background:var(--navy);color:#fff;font-family:'Sarabun',sans-serif;
+  font-size:15px;cursor:pointer;white-space:nowrap;flex-shrink:0;
+}
+.btn-search:hover{background:var(--blue);}
+.btn-clear{
+  padding:0 14px;height:42px;border:none;border-radius:8px;
+  background:#888;color:#fff;font-family:'Sarabun',sans-serif;
+  font-size:14px;cursor:pointer;white-space:nowrap;flex-shrink:0;
+  text-decoration:none;display:inline-flex;align-items:center;
+}
+.chip{text-decoration:none;cursor:pointer;}
+
+/* ── Sidebar / Overlay (เปิด-ปิดด้วย PHP class) ── */
+.overlay{display:none;}
+.overlay.open{display:block;}
+.sidebar.open{transform:translateX(0);}
+
+/* ── Toast (CSS animation ไม่ต้องใช้ JS) ── */
+.toast-php{
+  position:fixed;bottom:32px;left:50%;transform:translateX(-50%);
+  background:#1E3A5F;color:#fff;padding:12px 28px;border-radius:50px;
+  font-size:15px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.25);
+  animation:toastFade 4s ease forwards;pointer-events:none;
+}
+@keyframes toastFade{
+  0%  {opacity:0;transform:translateX(-50%) translateY(10px)}
+  10% {opacity:1;transform:translateX(-50%) translateY(0)}
+  75% {opacity:1}
+  100%{opacity:0;transform:translateX(-50%) translateY(10px)}
+}
+
+/* ── Header Buttons ── */
+.btn-login,.btn-register{
+  display:inline-flex;align-items:center;
+  padding:8px 16px;border-radius:8px;font-size:14px;
+  font-family:'Sarabun',sans-serif;cursor:pointer;
+  text-decoration:none;border:none;
+}
+.btn-login{background:transparent;border:1.5px solid var(--navy);color:var(--navy);}
+.btn-login:hover{background:var(--pale);}
+.btn-register{background:var(--navy);color:#fff;margin-left:8px;}
+.btn-register:hover{background:var(--blue);}
+.btn-register.danger{background:#c93b3b;}
+.btn-cart{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:40px;height:40px;border-radius:8px;border:1.5px solid var(--border);
+  background:#fff;font-size:18px;cursor:pointer;position:relative;
+  text-decoration:none;margin-left:8px;
+}
+.cart-dot{
+  position:absolute;top:-6px;right:-6px;
+  background:#e53;color:#fff;border-radius:50%;
+  width:18px;height:18px;font-size:10px;font-weight:700;
+  display:none;align-items:center;justify-content:center;
+}
+.cart-dot.show, .cart-dot:not(:empty){display:flex;}
+.btn-x,.modal-close{
+  background:none;border:none;font-size:24px;cursor:pointer;
+  color:var(--text);text-decoration:none;line-height:1;
+}
+
+/* ── Cart Items ── */
+.sb-item{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border2);}
+.sb-num{font-size:18px;font-weight:700;font-family:'Kanit',sans-serif;letter-spacing:3px;color:var(--navy);}
+.sb-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+.sb-price{font-weight:700;color:var(--navy);white-space:nowrap;}
+.btn-del{background:none;border:none;font-size:20px;cursor:pointer;color:var(--red);line-height:1;padding:0;}
+.sb-empty{text-align:center;padding:40px 0;color:var(--muted);}
+.sb-empty-ico{font-size:40px;display:block;margin-bottom:8px;}
+
+/* ── Card Buttons ── */
+.btn-add{
+  width:100%;padding:10px;border-radius:8px;border:none;cursor:pointer;
+  background:var(--navy);color:#fff;font-family:'Sarabun',sans-serif;font-size:14px;
+}
+.btn-add:disabled{background:var(--bg3);color:var(--muted);cursor:not-allowed;}
+.btn-add.in-cart:disabled{background:#c8e6c9;color:#1B8A52;cursor:not-allowed;}
+
+/* ── Social Login Buttons ── */
+.btn-social{
+  display:flex;align-items:center;gap:8px;width:100%;padding:10px 16px;
+  border:1.5px solid var(--border);border-radius:8px;background:#fff;
+  font-family:'Sarabun',sans-serif;font-size:14px;cursor:pointer;
+  text-decoration:none;color:var(--text);margin-top:8px;
+}
+.btn-social:hover{background:var(--pale);}
+
+/* ── Quantity Selector ── */
+.qty-row{display:flex;align-items:center;gap:6px;margin-top:8px;}
+.qty-btn{
+  width:30px;height:30px;border:1.5px solid var(--border);border-radius:6px;
+  background:#fff;font-size:16px;cursor:pointer;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;color:var(--navy);
+}
+.qty-btn:hover{background:var(--pale);}
+.qty-input{
+  width:40px;height:30px;text-align:center;border:1.5px solid var(--border);
+  border-radius:6px;font-size:14px;font-family:'Sarabun',sans-serif;
+  color:var(--navy);font-weight:600;
+}
+.qty-input::-webkit-inner-spin-button,
+.qty-input::-webkit-outer-spin-button{-webkit-appearance:none;}
+.qty-row .btn-add{flex:1;padding:8px;font-size:13px;}
+
+/* ════════════════════════════════════════════════
+   POPUP เลือกจำนวนใบ (QTY POPUP)
+   ════════════════════════════════════════════════ */
+
+/* Overlay พื้นหลัง */
+.qty-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(10,20,40,.55);backdrop-filter:blur(3px);
+}
+
+/* กล่อง popup */
+.qty-modal{
+  position:fixed;top:50%;left:50%;z-index:201;
+  transform:translate(-50%,-50%);
+  background:#fff;border-radius:16px;
+  padding:32px 28px;width:340px;max-width:92vw;
+  box-shadow:0 20px 60px rgba(10,20,40,.3);
+}
+
+/* ปุ่มปิด × */
+.qty-modal-close{
+  position:absolute;top:14px;right:18px;
+  font-size:24px;color:var(--muted);text-decoration:none;line-height:1;
+}
+.qty-modal-close:hover{color:var(--text);}
+
+/* หัว popup */
+.qty-modal-header{text-align:center;margin-bottom:16px;}
+.qty-modal-ico{font-size:32px;margin-bottom:4px;}
+.qty-modal-header h3{font-family:'Kanit',sans-serif;font-size:18px;color:var(--navy);}
+
+/* preview ตั๋ว */
+.qty-ticket-preview{
+  background:var(--pale);border:1.5px solid var(--border);
+  border-radius:10px;padding:14px;text-align:center;margin-bottom:20px;
+}
+.qty-period{font-size:12px;color:var(--muted);margin-bottom:4px;}
+.qty-number{
+  font-family:'Kanit',sans-serif;font-size:32px;font-weight:700;
+  letter-spacing:6px;color:var(--navy);
+}
+.qty-price-unit{font-size:13px;color:var(--muted);margin-top:4px;}
+
+/* label */
+.qty-label{font-size:13px;color:var(--muted);margin-bottom:8px;text-align:center;}
+
+/* ปุ่ม − ตัวเลข + */
+.qty-ctrl{
+  display:flex;align-items:center;justify-content:center;
+  gap:0;margin-bottom:14px;
+}
+.qty-btn{
+  width:44px;height:44px;border:1.5px solid var(--border);
+  background:#fff;font-size:22px;cursor:pointer;color:var(--navy);
+  transition:background .15s;flex-shrink:0;
+}
+.qty-btn:first-child{border-radius:8px 0 0 8px;}
+.qty-btn:last-child{border-radius:0 8px 8px 0;}
+.qty-btn:hover{background:var(--pale);}
+.qty-input{
+  width:64px;height:44px;border:1.5px solid var(--border);border-left:none;border-right:none;
+  text-align:center;font-family:'Kanit',sans-serif;font-size:20px;font-weight:700;
+  color:var(--navy);background:#fff;
+  -moz-appearance:textfield;
+}
+.qty-input::-webkit-inner-spin-button,
+.qty-input::-webkit-outer-spin-button{-webkit-appearance:none;}
+
+/* ยอดรวม */
+.qty-total{
+  text-align:center;font-size:15px;color:var(--muted);
+  margin-bottom:18px;
+}
+.qty-total strong{color:var(--navy);font-size:18px;}
+
+/* ปุ่มยืนยัน */
+.qty-confirm{
+  width:100%;padding:13px;border:none;border-radius:10px;
+  background:var(--navy);color:#fff;
+  font-family:'Sarabun',sans-serif;font-size:16px;font-weight:600;
+  cursor:pointer;transition:background .15s;
+}
+.qty-confirm:hover{background:var(--blue);}
+
+/* ════════════════════════════════════════════════
+   ตารางรางวัล (PRIZE SECTION)
+   ════════════════════════════════════════════════ */
+.prize-section{
+  position:relative;z-index:1;
+  padding:40px 20px;
+  background:var(--bg);
+}
+.prize-wrap{
+  max-width:1100px;margin:0 auto;
+}
+.prize-title{
+  font-family:'Kanit',sans-serif;font-size:22px;font-weight:700;
+  color:var(--navy);text-align:center;margin-bottom:24px;
+}
+.prize-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
+  gap:14px;
+}
+.prize-card{
+  background:#fff;border:1.5px solid var(--border);
+  border-radius:12px;padding:18px 14px;text-align:center;
+  box-shadow:var(--sh);transition:transform .15s,box-shadow .15s;
+}
+.prize-card:hover{transform:translateY(-3px);box-shadow:var(--sh2);}
+.prize-card.prize-top{
+  border-color:var(--mid);
+  background:linear-gradient(135deg,var(--navy) 0%,var(--blue) 100%);
+  color:#fff;
+}
+.prize-rank{
+  font-size:13px;font-weight:600;color:var(--muted);
+  margin-bottom:6px;font-family:'Sarabun',sans-serif;
+}
+.prize-top .prize-rank{color:rgba(255,255,255,.75);}
+.prize-amount{
+  font-family:'Kanit',sans-serif;font-size:22px;font-weight:700;
+  color:var(--navy);line-height:1.2;
+}
+.prize-top .prize-amount{color:#fff;font-size:26px;}
+.prize-count{
+  font-size:12px;color:var(--muted);margin-top:6px;
+}
+.prize-top .prize-count{color:rgba(255,255,255,.65);}
+
+@media(max-width:680px){
+  .prize-grid{grid-template-columns:repeat(2,1fr);}
+  .prize-title{font-size:18px;}
+}
