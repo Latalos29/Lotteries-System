@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['ajax'])) {
     $number = trim($_POST['number'] ?? '');
     $units  = intval($_POST['units']  ?? 1);
     if (!preg_match('/^\d{6}$/', $number)) { echo json_encode(['ok'=>false,'msg'=>'Number must be exactly 6 digits.']); exit; }
-    if ($units<1 || $units>100)            { echo json_encode(['ok'=>false,'msg'=>'Units must be 1–100.']);              exit; }
+    if ($units<1 || $units>100)            { echo json_encode(['ok'=>false,'msg'=>'Units must be 1–20.']);              exit; }
     $price = $units * 80;
     $pdo->prepare('INSERT INTO lottery_purchases (user_id,number,units,price) VALUES (?,?,?,?)')->execute([$userId,$number,$units,$price]);
     echo json_encode(['ok'=>true,'number'=>$number,'units'=>$units,'price'=>$price]);
@@ -246,7 +246,7 @@ nav{
     <p>Pick a 6-digit number and test your luck · ฿80 per unit</p>
   </div>
 
-  <!-- STATS -->
+  <!-- STATS  inp-units-->
   <div class="stats-strip">
     <div class="stat-pill">
       <span class="s-icon">🎫</span>
@@ -287,7 +287,7 @@ nav{
 
       <div class="units-row">
         <label>Units</label>
-        <input type="number" id="inp-units" min="1" max="100" value="1" oninput="updatePreview()">
+        <input type="number" id="inp-units" min="1" max="20" maxlength="2" value="1" oninput="updatePreview()">
         <span style="color:var(--gray);font-size:.85rem;">× ฿80 each</span>
       </div>
 

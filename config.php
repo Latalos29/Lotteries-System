@@ -7,7 +7,7 @@
         $host = 'localhost';
         $user = 'root';
         $password = '';
-        $namedb = 'lottery_system';
+        $namedb = 'lottery';
         
         $conn = mysqli_connect($host, $user, $password, $namedb);
 
