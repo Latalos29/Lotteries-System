@@ -1,4 +1,11 @@
+<<<<<<< HEAD
 <?php
+=======
+<!-- <?php
+/* ════════════════════════════════════════════════
+   index.php — LottoShop (PHP Only, No JavaScript)
+   ════════════════════════════════════════════════ */
+>>>>>>> 0c002f9 (modify file config login loginconfig name database)
 session_start();
 require_once 'config.php';
 
@@ -589,4 +596,9 @@ if ($db) $db->close();
 </footer>
 
 </body>
+<<<<<<< HEAD
 </html>
+=======
+
+</html> -->
+>>>>>>> 0c002f9 (modify file config login loginconfig name database)

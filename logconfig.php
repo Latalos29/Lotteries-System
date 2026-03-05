@@ -1,11 +1,11 @@
 <?php
 function getDB() {
-    $host = "localhost";
-    $user = "root";
-    $pass = "";
-    $db   = "lottery-system"; // สำคัญ ต้องตรงกับฐานข้อมูลจริง
-
-    $conn = new mysqli($host, $user, $pass, $db);
+    $host = 'localhost';
+        $user = 'root';
+        $password = '';
+        $namedb = 'lottery_system';
+        
+        $conn = mysqli_connect($host, $user, $password, $namedb);
 
     if ($conn->connect_error) {
         return null;

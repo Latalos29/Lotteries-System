@@ -29,7 +29,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION['user_id'] = $row['user_id'];
             $_SESSION['username'] = $row['username'];
             $_SESSION['email'] = $row['email'] ?? '';
-            header("Location: index.php");
+            header("Location: buyLottery.php");
             exit();
 
         } else {
