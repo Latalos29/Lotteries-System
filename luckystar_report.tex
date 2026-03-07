@@ -1,0 +1,780 @@
+% LuckyStar Web Application Report
+% Font: Loma (Thai) via XeLaTeX
+\documentclass[a4paper,12pt]{article}
+
+%% ---- Packages ----
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\usepackage[a4paper, top=1.5cm, bottom=1.5cm, left=1.5cm, right=1.5cm]{geometry}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, calc}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\tcbuselibrary{listings, skins, breakable}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{setspace}
+\usepackage{hyperref}
+\hypersetup{hidelinks}
+
+%% ---- Thai Font Setup ----
+\setmainlanguage{thai}
+\setotherlanguage{english}
+\setmainfont{Loma}[
+  BoldFont       = Loma-Bold,
+  ItalicFont     = Loma-Oblique,
+  BoldItalicFont = Loma-BoldOblique,
+  Script         = Thai
+]
+\setmonofont{DejaVu Sans Mono}[Scale=0.82]
+
+%% ---- Header: page number top-right only, no rule, no title ----
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\fancypagestyle{plain}{
+  \fancyhf{}
+  \fancyhead[R]{\thepage}
+  \renewcommand{\headrulewidth}{0pt}
+}
+
+%% ---- Section formatting (no underline rule) ----
+\titleformat{\section}{\large\bfseries}{}{0em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\itshape}{}{0em}{}
+\titlespacing{\section}{0pt}{14pt}{6pt}
+\titlespacing{\subsection}{0pt}{10pt}{4pt}
+
+%% ---- Line spacing ----
+\setstretch{1.35}
+
+%% ---- Colors ----
+\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{codeframe}{RGB}{200,200,200}
+\definecolor{keyword}{RGB}{192,57,43}
+\definecolor{comment}{RGB}{80,130,80}
+\definecolor{string}{RGB}{30,100,180}
+
+%% ---- Code listing styles ----
+\lstdefinestyle{phpstyle}{
+  language=PHP,
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\color{keyword}\bfseries,
+  commentstyle=\color{comment}\itshape,
+  stringstyle=\color{string},
+  breaklines=true,
+  breakatwhitespace=false,
+  frame=single,
+  rulecolor=\color{codeframe},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=6pt,
+  showstringspaces=false,
+  tabsize=4,
+  captionpos=b,
+  columns=fullflexible,
+  keepspaces=true,
+  xleftmargin=10pt,
+  xrightmargin=0pt,
+}
+\lstdefinestyle{sqlstyle}{
+  language=SQL,
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\color{keyword}\bfseries,
+  commentstyle=\color{comment}\itshape,
+  stringstyle=\color{string},
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{codeframe},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=6pt,
+  showstringspaces=false,
+  tabsize=4,
+  columns=fullflexible,
+  keepspaces=true,
+  xleftmargin=10pt,
+}
+
+%%=============================================================================
+\begin{document}
+
+%%---------- หน้า ก : คำนำ ----------
+\thispagestyle{plain}
+\setcounter{page}{1}
+\pagenumbering{alph}
+
+\begin{center}
+{\large\bfseries คำนำ}
+\end{center}
+
+\vspace{0.8em}
+\setlength{\parindent}{2em}
+\sloppy
+
+รายงานฉบับนี้จัดทำขึ้นเพื่อนำเสนอโครงงาน \textbf{LuckyStar Web Application}
+ซึ่งเป็นระบบจำหน่ายสลากกินแบ่งออนไลน์ที่พัฒนาด้วยภาษา PHP ร่วมกับฐานข้อมูล MySQL
+โดยมีเป้าหมายเพื่อให้ผู้ใช้งานสามารถสมัครสมาชิก เข้าสู่ระบบ ซื้อสลาก
+และตรวจสอบผลรางวัลได้อย่างสะดวกรวดเร็วผ่านอินเทอร์เน็ต
+
+เนื้อหาในรายงานประกอบด้วย วัตถุประสงค์ของโครงงาน คู่มือการใช้งานระบบ
+การอธิบายโค้ดแต่ละไฟล์อย่างละเอียด โครงสร้างฐานข้อมูลพร้อม ER Diagram
+และภาคผนวกที่แสดงโค้ดโปรแกรมฉบับเต็ม
+
+คณะผู้จัดทำหวังเป็นอย่างยิ่งว่ารายงานฉบับนี้จะเป็นประโยชน์ต่อผู้ที่สนใจ
+ศึกษาการพัฒนาเว็บแอปพลิเคชันด้วยภาษา PHP และฐานข้อมูล MySQL
+และหากมีข้อผิดพลาดประการใด คณะผู้จัดทำขออภัยมา ณ ที่นี้ด้วย
+
+\setlength{\parindent}{0pt}
+
+\vspace{2.5em}
+\begin{flushright}
+คณะผู้จัดทำ
+\end{flushright}
+
+\newpage
+
+%%---------- หน้า ข : สารบัญ ----------
+\thispagestyle{plain}
+\begin{center}
+{\large\bfseries สารบัญ}
+\end{center}
+
+\vspace{0.5em}
+
+% สารบัญชิดขวา 2pt จาก margin
+\newlength{\tocwidth}
+\setlength{\tocwidth}{\textwidth}
+\addtolength{\tocwidth}{-2pt}
+{\setlength{\tabcolsep}{0pt}\renewcommand{\arraystretch}{1.3}
+\noindent\begin{tabularx}{\tocwidth}{@{}X@{\hspace{2pt}}r@{}}
+\textbf{หัวข้อ} & \textbf{หน้า} \\
+คำนำ & ก \\
+สารบัญ & ข \\
+วัตถุประสงค์ในการทำโครงงาน & 1 \\
+\textbf{ส่วนที่ 1} การใช้งานเว็บแอปพลิเคชัน & 2 \\
+\hspace{1.5em}1.1 หน้าเข้าสู่ระบบ (index.php) & 2 \\
+\hspace{1.5em}1.2 หน้าสมัครสมาชิก (register.php) & 3 \\
+\hspace{1.5em}1.3 หน้าซื้อสลาก (buy\_lottery.php) & 4 \\
+\hspace{1.5em}1.4 หน้าตรวจผลรางวัล (check\_lottery.php) & 5 \\
+\hspace{1.5em}1.5 หน้าออกจากระบบ (logout.php) & 6 \\
+\textbf{ส่วนที่ 2} การอธิบายโค้ดในแต่ละไฟล์ & 7 \\
+\hspace{1.5em}2.1 db\_config.php & 7 \\
+\hspace{1.5em}2.2 index.php & 8 \\
+\hspace{1.5em}2.3 register.php & 9 \\
+\hspace{1.5em}2.4 buy\_lottery.php & 10 \\
+\hspace{1.5em}2.5 check\_lottery.php & 11 \\
+\hspace{1.5em}2.6 logout.php & 12 \\
+\hspace{1.5em}2.7 ฐานข้อมูลและ ER Diagram & 13 \\
+ภาคผนวก --- โค้ดโปรแกรมฉบับเต็ม & 15 \\
+\end{tabularx}}
+
+\newpage
+
+%%=============================================================================
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+%%---------- หน้า 1 : วัตถุประสงค์ ----------
+\section*{วัตถุประสงค์ในการทำโครงงาน}
+
+โครงงาน \textbf{LuckyStar Web Application} เป็นเว็บแอปพลิเคชันระบบจำหน่ายสลากกินแบ่งออนไลน์
+พัฒนาด้วยภาษา PHP เวอร์ชัน 8 ร่วมกับฐานข้อมูล MySQL โดยมีวัตถุประสงค์ดังนี้
+
+\begin{enumerate}[leftmargin=2cm, label=\arabic*., topsep=2pt, itemsep=1pt]
+\item เพื่อพัฒนาทักษะการเขียนโปรแกรมด้วยภาษา PHP แบบ Server-side Scripting ในรูปแบบ MVC อย่างง่าย
+\item เพื่อศึกษาการเชื่อมต่อฐานข้อมูล MySQL ผ่าน PDO (PHP Data Objects) พร้อมการป้องกัน SQL Injection
+\item เพื่อสร้างระบบจัดการผู้ใช้งาน ได้แก่ การสมัครสมาชิก การเข้าสู่ระบบ และการจัดการ Session
+\item เพื่อพัฒนาระบบจำหน่ายสลากออนไลน์ที่สามารถซื้อสลากหมายเลข 6 หลัก ในหน่วยละ 80 บาท
+\item เพื่อสร้างระบบตรวจผลรางวัลอัตโนมัติ โดยรองรับ 3 ประเภทรางวัล คือ รางวัลที่ 1 (6 หลักตรง), รางวัล 3 ตัวหน้า และรางวัล 3 ตัวท้าย
+\item เพื่อออกแบบส่วนติดต่อผู้ใช้ (UI) ให้มีความสวยงาม ทันสมัย และใช้งานง่าย ด้วย CSS3 และ Google Fonts
+\end{enumerate}
+
+\vspace{0.8em}
+\noindent\textbf{เทคโนโลยีที่ใช้}
+
+\vspace{0.4em}
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{เทคโนโลยี} & \textbf{รายละเอียด} \\
+\hline
+PHP 8.x      & ภาษาหลักในการพัฒนา Backend \\
+\hline
+MySQL        & ระบบจัดการฐานข้อมูลเชิงสัมพันธ์ \\
+\hline
+PDO          & ชั้นเชื่อมต่อฐานข้อมูล ป้องกัน SQL Injection \\
+\hline
+HTML5 / CSS3 & ออกแบบส่วนหน้าเว็บ \\
+\hline
+Google Fonts & ฟอนต์ Playfair Display และ Nunito \\
+\hline
+Session      & จัดการการเข้าสู่ระบบและข้อมูลผู้ใช้ \\
+\hline
+\end{tabularx}
+
+\newpage
+
+%%=============================================================================
+\section*{ส่วนที่ 1 การใช้งานเว็บแอปพลิเคชัน}
+
+\subsection*{1.1 หน้าเข้าสู่ระบบ (index.php)}
+
+หน้าแรกของระบบคือหน้าเข้าสู่ระบบ แบ่งออกเป็น 2 ส่วนหลัก ดังนี้
+
+\begin{itemize}[leftmargin=1.5cm, topsep=2pt, itemsep=1pt]
+  \item \textbf{แผงด้านซ้าย (Brand Panel):} แสดงโลโก้ ชื่อ LuckyStar และข้อมูลรางวัล เช่น รางวัลที่ 1 สูงถึง 6,000,000 บาท รางวัล 3 ตัวหน้า-ท้าย 4,000 บาท/หน่วย และราคาสลาก 80 บาท/หน่วย
+  \item \textbf{แผงด้านขวา (Login Form):} แบบฟอร์มเข้าสู่ระบบ ประกอบด้วยช่องกรอก Username และ Password พร้อมปุ่ม Sign In และลิงก์ไปหน้าสมัครสมาชิก
+\end{itemize}
+
+\noindent\textbf{ขั้นตอนการเข้าสู่ระบบ}
+\begin{enumerate}[leftmargin=2cm, label=\arabic*., topsep=2pt, itemsep=1pt]
+  \item เปิดเว็บเบราว์เซอร์แล้วไปที่ URL ของระบบ
+  \item กรอก Username และ Password ที่ลงทะเบียนไว้
+  \item กดปุ่ม \textbf{Sign In} เพื่อเข้าสู่ระบบ
+  \item หากข้อมูลถูกต้อง ระบบจะนำไปยังหน้าซื้อสลาก (buy\_lottery.php)
+  \item หากข้อมูลไม่ถูกต้อง ระบบจะแสดงข้อความแจ้งเตือน
+\end{enumerate}
+
+\subsection*{1.2 หน้าสมัครสมาชิก (register.php)}
+
+หน้าสมัครสมาชิกใช้สำหรับสร้างบัญชีผู้ใช้ใหม่ โดยมีฟิลด์ที่ต้องกรอกดังนี้
+
+\begin{itemize}[leftmargin=1.5cm, topsep=2pt, itemsep=1pt]
+  \item \textbf{Full Name:} ชื่อ-นามสกุลของผู้ใช้
+  \item \textbf{Username:} ชื่อผู้ใช้สำหรับเข้าสู่ระบบ (ต้องไม่ซ้ำกัน)
+  \item \textbf{Email:} อีเมลที่ใช้งาน (ต้องไม่ซ้ำกัน)
+  \item \textbf{Password:} รหัสผ่านอย่างน้อย 6 ตัวอักษร
+  \item \textbf{Confirm Password:} ยืนยันรหัสผ่าน
+\end{itemize}
+
+ระบบมีแถบแสดงความปลอดภัยของรหัสผ่าน (Password Strength Bar) ที่จะเปลี่ยนสีตามความยาวและความซับซ้อนของรหัสผ่านที่กรอก
+
+\subsection*{1.3 หน้าซื้อสลาก (buy\_lottery.php)}
+
+หน้าหลักสำหรับผู้ใช้ที่เข้าสู่ระบบแล้ว มีองค์ประกอบดังนี้
+
+\begin{itemize}[leftmargin=1.5cm, topsep=2pt, itemsep=1pt]
+  \item \textbf{แถบนำทาง (Navigation Bar):} แสดงโลโก้ ลิงก์ Buy / Check ชื่อผู้ใช้ปัจจุบัน และปุ่ม Sign Out
+  \item \textbf{ฟอร์มซื้อสลาก:} ช่องกรอกหมายเลข 6 หลัก (ตัวเลขเท่านั้น) ช่องกรอกจำนวนหน่วย และปุ่ม Buy Now
+  \item \textbf{ตารางประวัติการซื้อ:} แสดงรายการสลากที่ซื้อทั้งหมดของผู้ใช้ ประกอบด้วย หมายเลข จำนวนหน่วย ราคารวม และวันที่ซื้อ
+\end{itemize}
+
+\newpage
+
+\noindent\textbf{ขั้นตอนการซื้อสลาก}
+\begin{enumerate}[leftmargin=2cm, label=\arabic*., topsep=2pt, itemsep=1pt]
+  \item กรอกหมายเลขสลาก 6 หลักในช่อง Lottery Number
+  \item กรอกจำนวนหน่วยที่ต้องการ (อย่างน้อย 1 หน่วย)
+  \item กดปุ่ม \textbf{Buy Now} เพื่อยืนยันการซื้อ
+  \item ระบบจะบันทึกข้อมูลและแสดงรายการในตารางประวัติ
+\end{enumerate}
+
+\subsection*{1.4 หน้าตรวจผลรางวัล (check\_lottery.php)}
+
+หน้าตรวจผลรางวัลแบ่งออกเป็น 3 ส่วน ดังนี้
+
+\begin{itemize}[leftmargin=1.5cm, topsep=2pt, itemsep=1pt]
+  \item \textbf{แบนเนอร์หมายเลขที่ถูกรางวัล:} แสดงหมายเลขรางวัลล่าสุด พร้อม 3 ตัวหน้า 3 ตัวท้าย และวันที่ออกรางวัล
+  \item \textbf{ฟอร์มตรวจสอบ:} ช่องกรอกหมายเลข 6 หลักและปุ่ม Check Now
+  \item \textbf{ผลการตรวจสอบ:} แสดงผลใน 4 รูปแบบ คือ ไม่ได้ซื้อสลากหมายเลขนี้, ไม่ถูกรางวัล, ถูกรางวัล 3 ตัวหน้า/ตัวท้าย หรือถูกรางวัลที่ 1
+\end{itemize}
+
+\vspace{0.5em}
+\begin{tabularx}{\textwidth}{|l|X|r|}
+\hline
+\textbf{ประเภทรางวัล} & \textbf{เงื่อนไข} & \textbf{เงินรางวัล/หน่วย} \\
+\hline
+รางวัลที่ 1 (Jackpot) & ตรง 6 หลัก & 6,000,000 บาท \\
+\hline
+รางวัล 3 ตัวหน้า & 3 หลักแรกตรงกัน & 4,000 บาท \\
+\hline
+รางวัล 3 ตัวท้าย & 3 หลักหลังตรงกัน & 4,000 บาท \\
+\hline
+\end{tabularx}
+
+\subsection*{1.5 หน้าออกจากระบบ (logout.php)}
+
+เมื่อผู้ใช้กดปุ่ม Sign Out ระบบจะทำการลบ Session ทั้งหมดและนำทางกลับไปยังหน้าเข้าสู่ระบบ (index.php) โดยอัตโนมัติ
+
+\newpage
+
+%%=============================================================================
+\section*{ส่วนที่ 2 การอธิบายโค้ดในแต่ละไฟล์}
+
+\subsection*{2.1 ไฟล์ db\_config.php --- การเชื่อมต่อฐานข้อมูล}
+
+ไฟล์นี้มีหน้าที่กำหนดค่าการเชื่อมต่อฐานข้อมูล MySQL ผ่าน PDO (PHP Data Objects) ซึ่งเป็น interface มาตรฐานสำหรับเชื่อมต่อฐานข้อมูลใน PHP
+
+\noindent\textbf{องค์ประกอบหลัก}
+\begin{itemize}[leftmargin=1.5cm, topsep=2pt, itemsep=1pt]
+  \item กำหนดตัวแปร \texttt{\$host}, \texttt{\$dbname}, \texttt{\$user}, \texttt{\$pass} สำหรับข้อมูลการเชื่อมต่อ
+  \item สร้างวัตถุ \texttt{PDO} พร้อมกำหนด charset เป็น \texttt{utf8mb4} เพื่อรองรับภาษาไทย
+  \item ตั้งค่า \texttt{ERRMODE\_EXCEPTION} เพื่อให้ PDO โยน Exception เมื่อเกิดข้อผิดพลาด
+  \item ตั้งค่า \texttt{FETCH\_ASSOC} เพื่อคืนค่าผลลัพธ์ในรูปแบบ Associative Array
+  \item ปิด \texttt{EMULATE\_PREPARES} เพื่อป้องกัน SQL Injection อย่างแท้จริง
+  \item ครอบทุกอย่างด้วย \texttt{try-catch} เพื่อดักจับข้อผิดพลาดในการเชื่อมต่อ
+\end{itemize}
+
+\subsection*{2.2 ไฟล์ index.php --- หน้าเข้าสู่ระบบ}
+
+เป็นจุดเริ่มต้นของระบบ มีการทำงาน 2 ส่วนหลัก ได้แก่ PHP Logic และ HTML View
+
+\noindent\textbf{ส่วน PHP Logic}
+\begin{itemize}[leftmargin=1.5cm, topsep=2pt, itemsep=1pt]
+  \item เรียก \texttt{session\_start()} เพื่อเริ่ม Session
+  \item ตรวจสอบว่ามี \texttt{\$\_SESSION['user\_id']} อยู่แล้วหรือไม่ ถ้ามีให้ redirect ไปหน้า buy\_lottery.php ทันที
+  \item เมื่อรับ POST Request จะดึงข้อมูล username และ password แล้วค้นหาผู้ใช้ในฐานข้อมูลด้วย Prepared Statement
+  \item ใช้ \texttt{password\_verify()} ตรวจสอบรหัสผ่านกับ Hash ที่เก็บไว้
+  \item หากถูกต้อง บันทึก \texttt{user\_id}, \texttt{username}, \texttt{fullname} ลง Session แล้ว redirect ไปหน้าซื้อสลาก
+\end{itemize}
+
+\noindent\textbf{ส่วน HTML View}
+
+ออกแบบด้วย CSS แบบ 2 คอลัมน์ ฝั่งซ้ายเป็น Brand Panel สีแดง ฝั่งขวาเป็น Login Form พร้อม Animation fadeIn และ floating star icon
+
+\subsection*{2.3 ไฟล์ register.php --- หน้าสมัครสมาชิก}
+
+\noindent\textbf{การตรวจสอบข้อมูล (Validation)}
+\begin{itemize}[leftmargin=1.5cm, topsep=2pt, itemsep=1pt]
+  \item ตรวจสอบว่ากรอกข้อมูลครบทุกฟิลด์
+  \item ตรวจสอบว่า Password มีความยาวอย่างน้อย 6 ตัวอักษร
+  \item ตรวจสอบว่า Password และ Confirm Password ตรงกัน
+  \item ตรวจสอบว่า Username หรือ Email ยังไม่ถูกใช้ในระบบด้วยการ Query ฐานข้อมูลก่อนบันทึก
+\end{itemize}
+
+\noindent\textbf{การบันทึกข้อมูล}
+
+ใช้ \texttt{password\_hash(\$password, PASSWORD\_DEFAULT)} แปลงรหัสผ่านเป็น Bcrypt Hash ก่อนบันทึกลงฐานข้อมูล เพื่อความปลอดภัย ไม่มีการเก็บรหัสผ่านในรูปแบบ Plain Text
+
+\subsection*{2.4 ไฟล์ buy\_lottery.php --- ระบบซื้อสลาก}
+
+\noindent\textbf{ส่วนซื้อสลาก}
+\begin{itemize}[leftmargin=1.5cm, topsep=2pt, itemsep=1pt]
+  \item ตรวจสอบว่าหมายเลขสลากเป็นตัวเลข 6 หลักด้วย Regular Expression \texttt{/\^{}\textbackslash{}d\{6\}\$/}
+  \item ตรวจสอบว่าจำนวนหน่วยเป็นจำนวนเต็มบวก
+  \item คำนวณราคาโดย ราคา = จำนวนหน่วย $\times$ 80 บาท
+  \item ถ้าเคยซื้อแล้วอัปเดตจำนวนหน่วยใน record เดิม ถ้ายังไม่เคยซื้อ INSERT record ใหม่
+\end{itemize}
+
+\noindent\textbf{ส่วนแสดงประวัติการซื้อ}
+
+Query ข้อมูลจากตาราง \texttt{lottery\_purchases} เรียงตามวันที่ซื้อล่าสุดก่อน แสดงในตาราง HTML พร้อมรูปแบบสีสลับแถว
+
+\subsection*{2.5 ไฟล์ check\_lottery.php --- ระบบตรวจผลรางวัล}
+
+\noindent\textbf{อัลกอริทึมตรวจสอบรางวัล}
+\begin{enumerate}[leftmargin=2cm, label=\arabic*., topsep=2pt, itemsep=1pt]
+  \item ตรวจสอบว่าผู้ใช้ซื้อสลากหมายเลขนั้นหรือไม่ด้วย SQL \texttt{COALESCE(SUM(units))}
+  \item ถ้าตัวเลขตรงทั้ง 6 หลัก --- ถูกรางวัลที่ 1
+  \item ถ้า 3 หลักแรกตรง (และไม่ใช่รางวัลที่ 1) --- ถูก 3 ตัวหน้า
+  \item ถ้า 3 หลักหลังตรง (และไม่ใช่รางวัลที่ 1 หรือ 3 ตัวหน้า) --- ถูก 3 ตัวท้าย
+  \item ถ้า 3 หลักทั้งหน้าและท้ายตรง (แต่ไม่ตรงทั้ง 6 หลัก) --- ถูกทั้ง 3 ตัวหน้าและ 3 ตัวท้าย
+\end{enumerate}
+
+\subsection*{2.6 ไฟล์ logout.php --- ออกจากระบบ}
+
+ทำงาน 3 ขั้นตอน คือ เริ่ม Session ด้วย \texttt{session\_start()}, ทำลาย Session ทั้งหมดด้วย \texttt{session\_destroy()}, และ redirect กลับไปหน้า index.php
+
+\subsection*{2.7 ฐานข้อมูลและ ER Diagram}
+
+ระบบใช้ฐานข้อมูล \texttt{luckystar\_db} ประกอบด้วย 3 ตารางหลัก
+
+\vspace{0.4em}
+\noindent\textbf{ตารางที่ 1: users}
+
+\begin{tabularx}{\textwidth}{|l|l|l|X|}
+\hline
+\textbf{ชื่อคอลัมน์} & \textbf{ชนิดข้อมูล} & \textbf{ข้อจำกัด} & \textbf{คำอธิบาย} \\
+\hline
+id         & INT(11)      & PK, AUTO\_INCREMENT & รหัสผู้ใช้ \\
+\hline
+username   & VARCHAR(50)  & NOT NULL, UNIQUE & ชื่อผู้ใช้ \\
+\hline
+password   & VARCHAR(255) & NOT NULL & รหัสผ่าน (Bcrypt Hash) \\
+\hline
+fullname   & VARCHAR(100) & NOT NULL & ชื่อ-นามสกุล \\
+\hline
+email      & VARCHAR(100) & NOT NULL, UNIQUE & อีเมล \\
+\hline
+created\_at & TIMESTAMP   & DEFAULT NOW() & วันที่สร้างบัญชี \\
+\hline
+\end{tabularx}
+
+\newpage
+
+\noindent\textbf{ตารางที่ 2: lottery\_purchases}
+
+\begin{tabularx}{\textwidth}{|l|l|l|X|}
+\hline
+\textbf{ชื่อคอลัมน์} & \textbf{ชนิดข้อมูล} & \textbf{ข้อจำกัด} & \textbf{คำอธิบาย} \\
+\hline
+id         & INT(11)       & PK, AUTO\_INCREMENT & รหัสรายการ \\
+\hline
+user\_id   & INT(11)       & FK → users.id & รหัสผู้ใช้ที่ซื้อ \\
+\hline
+number     & CHAR(6)       & NOT NULL & หมายเลขสลาก \\
+\hline
+units      & INT(11)       & DEFAULT 1 & จำนวนหน่วย \\
+\hline
+price      & DECIMAL(10,2) & NOT NULL & ราคารวม \\
+\hline
+bought\_at & TIMESTAMP     & DEFAULT NOW() & วันที่ซื้อ \\
+\hline
+\end{tabularx}
+
+\vspace{0.6em}
+\noindent\textbf{ตารางที่ 3: winning\_numbers}
+
+\begin{tabularx}{\textwidth}{|l|l|l|X|}
+\hline
+\textbf{ชื่อคอลัมน์} & \textbf{ชนิดข้อมูล} & \textbf{ข้อจำกัด} & \textbf{คำอธิบาย} \\
+\hline
+id         & INT(11)   & PK, AUTO\_INCREMENT & รหัสรายการ \\
+\hline
+number     & CHAR(6)   & NOT NULL & หมายเลขที่ถูกรางวัล \\
+\hline
+draw\_date & DATE      & DEFAULT CURDATE() & วันที่ออกรางวัล \\
+\hline
+created\_at & TIMESTAMP & DEFAULT NOW() & วันที่บันทึก \\
+\hline
+\end{tabularx}
+
+\newpage
+
+\noindent\textbf{ER Diagram (Entity-Relationship Diagram) --- Chen Notation}
+
+\vspace{0.8em}
+
+\begin{center}
+\scalebox{0.72}{%
+\begin{tikzpicture}[
+  entity/.style={
+    rectangle, draw=black, thick, fill=blue!10,
+    minimum width=3.2cm, minimum height=0.75cm,
+    font=\normalsize\bfseries, align=center
+  },
+  attr/.style={
+    ellipse, draw=black, thin, fill=yellow!25,
+    minimum width=1.9cm, minimum height=0.55cm,
+    font=\small, align=center, inner sep=2pt
+  },
+  pkattr/.style={
+    ellipse, draw=black, thin, fill=yellow!25,
+    minimum width=1.9cm, minimum height=0.55cm,
+    font=\small\bfseries, align=center, inner sep=2pt
+  },
+  rel/.style={
+    diamond, draw=black, thick, fill=orange!20,
+    minimum width=2.2cm, minimum height=0.75cm,
+    font=\normalsize\bfseries, align=center, aspect=1.8
+  },
+  line/.style={draw=black, thick},
+  card/.style={font=\small\bfseries}
+]
+
+%% =========== ENTITY: users ===========
+\node[entity] (users) at (0,0) {users};
+
+\node[pkattr] (uid)      at (-2.8,  1.6) {\underline{id}};
+\node[attr]   (uname)    at ( 0,    2.4) {username};
+\node[attr]   (ufull)    at ( 2.8,  1.6) {fullname};
+\node[attr]   (upass)    at (-2.8, -1.6) {password};
+\node[attr]   (uemail)   at ( 0,   -2.4) {email};
+\node[attr]   (ucreated) at ( 2.8, -1.6) {created\_at};
+
+\draw[line] (users) -- (uid);
+\draw[line] (users) -- (uname);
+\draw[line] (users) -- (ufull);
+\draw[line] (users) -- (upass);
+\draw[line] (users) -- (uemail);
+\draw[line] (users) -- (ucreated);
+
+%% =========== RELATIONSHIP: buys ===========
+\node[rel] (buys) at (5.5,0) {ซื้อ};
+\draw[line] (users) -- node[card, above]{1} (buys);
+
+%% =========== ENTITY: lottery_purchases ===========
+\node[entity] (lp) at (11.0,0) {lottery\_purchases};
+\draw[line] (buys) -- node[card, above]{N} (lp);
+
+\node[pkattr] (lpid)     at (11.0,  2.2) {\underline{id}};
+\node[attr]   (lpnum)    at (13.6,  1.5) {number};
+\node[attr]   (lpunits)  at (14.4,  0.0) {units};
+\node[attr]   (lpprice)  at (13.6, -1.5) {price};
+\node[attr]   (lpbought) at (11.0, -2.2) {bought\_at};
+\node[attr]   (lpuid)    at ( 8.4,  1.5) {user\_id (FK)};
+
+\draw[line] (lp) -- (lpid);
+\draw[line] (lp) -- (lpnum);
+\draw[line] (lp) -- (lpunits);
+\draw[line] (lp) -- (lpprice);
+\draw[line] (lp) -- (lpbought);
+\draw[line] (lp) -- (lpuid);
+
+%% =========== ENTITY: winning_numbers ===========
+\node[entity] (wn) at (5.5,-5.5) {winning\_numbers};
+
+\node[pkattr] (wnid)      at (2.5,  -5.5) {\underline{id}};
+\node[attr]   (wnnum)     at (4.0,  -4.0) {number};
+\node[attr]   (wndate)    at (7.0,  -4.0) {draw\_date};
+\node[attr]   (wncreated) at (8.5,  -5.5) {created\_at};
+
+\draw[line] (wn) -- (wnid);
+\draw[line] (wn) -- (wnnum);
+\draw[line] (wn) -- (wndate);
+\draw[line] (wn) -- (wncreated);
+
+%% หมายเหตุ
+\node[draw=gray!60, dashed, rounded corners=3pt, fill=gray!8,
+      font=\small, align=left, text width=4.5cm, inner sep=5pt]
+  at (5.5,-7.4)
+  {winning\_numbers เป็นตารางอิสระ\\ไม่มี FK เชื่อมกับตารางอื่น};
+
+\end{tikzpicture}}
+\end{center}
+
+\vspace{0.5em}
+\noindent\textit{หมายเหตุ:} ตาราง \texttt{users} มีความสัมพันธ์แบบ One-to-Many (1:N) กับตาราง \texttt{lottery\_purchases} ผู้ใช้ 1 คนสามารถซื้อสลากได้หลายรายการ ส่วนตาราง \texttt{winning\_numbers} เป็นตารางอิสระที่ Admin เพิ่มข้อมูลหมายเลขรางวัล
+
+\newpage
+
+%%=============================================================================
+\section*{ภาคผนวก --- โค้ดโปรแกรมฉบับเต็ม}
+
+%%---------- ภาคผนวก ก ----------
+\subsection*{ภาคผนวก ก: db\_config.php}
+
+\begin{lstlisting}[style=phpstyle, caption={db\_config.php}]
+<?php
+// db_config.php - Database connection for LuckyStar
+$host   = 'localhost';
+$dbname = 'luckystar_db';
+$user   = 'root';
+$pass   = '';
+
+try {
+    $pdo = new PDO(
+        "mysql:host=$host;dbname=$dbname;charset=utf8mb4",
+        $user, $pass,
+        [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES   => false,
+        ]
+    );
+} catch (PDOException $e) {
+    die('Database connection failed: ' . $e->getMessage());
+}
+?>
+\end{lstlisting}
+
+\newpage
+
+%%---------- ภาคผนวก ข ----------
+\subsection*{ภาคผนวก ข: luckystar\_db.sql}
+
+\begin{lstlisting}[style=sqlstyle, caption={luckystar\_db.sql}]
+CREATE DATABASE IF NOT EXISTS `luckystar_db`
+  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE `luckystar_db`;
+
+CREATE TABLE IF NOT EXISTS `users` (
+  `id`         INT(11)      NOT NULL AUTO_INCREMENT,
+  `username`   VARCHAR(50)  NOT NULL UNIQUE,
+  `password`   VARCHAR(255) NOT NULL,
+  `fullname`   VARCHAR(100) NOT NULL,
+  `email`      VARCHAR(100) NOT NULL UNIQUE,
+  `created_at` TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `lottery_purchases` (
+  `id`        INT(11)        NOT NULL AUTO_INCREMENT,
+  `user_id`   INT(11)        NOT NULL,
+  `number`    CHAR(6)        NOT NULL,
+  `units`     INT(11)        NOT NULL DEFAULT 1,
+  `price`     DECIMAL(10,2)  NOT NULL,
+  `bought_at` TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_user` FOREIGN KEY (`user_id`)
+    REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `winning_numbers` (
+  `id`         INT(11)   NOT NULL AUTO_INCREMENT,
+  `number`     CHAR(6)   NOT NULL,
+  `draw_date`  DATE      NOT NULL DEFAULT (CURDATE()),
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO `winning_numbers` (`number`, `draw_date`)
+VALUES ('456789', CURDATE());
+\end{lstlisting}
+
+\newpage
+
+%%---------- ภาคผนวก ค ----------
+\subsection*{ภาคผนวก ค: index.php --- PHP Logic}
+
+\begin{lstlisting}[style=phpstyle, caption={index.php}]
+<?php
+session_start();
+if (isset($_SESSION['user_id'])) {
+    header('Location: buy_lottery.php'); exit;
+}
+$error = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require 'db_config.php';
+    $username = trim($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $stmt = $pdo->prepare(
+        'SELECT id,username,password,fullname FROM users WHERE username=?'
+    );
+    $stmt->execute([$username]);
+    $user = $stmt->fetch();
+    if ($user && password_verify($password, $user['password'])) {
+        $_SESSION['user_id']  = $user['id'];
+        $_SESSION['username'] = $user['username'];
+        $_SESSION['fullname'] = $user['fullname'];
+        header('Location: buy_lottery.php'); exit;
+    } else {
+        $error = 'Username or Password is not correct';
+    }
+}
+?>
+\end{lstlisting}
+
+\newpage
+
+%%---------- ภาคผนวก ง ----------
+\subsection*{ภาคผนวก ง: register.php --- PHP Logic}
+
+\begin{lstlisting}[style=phpstyle, caption={register.php}]
+<?php
+session_start();
+if (isset($_SESSION['user_id'])) {
+    header('Location: buy_lottery.php'); exit;
+}
+$error = ''; $success = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require 'db_config.php';
+    $username = trim($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $confirm  = $_POST['confirm']  ?? '';
+    $fullname = trim($_POST['fullname'] ?? '');
+    $email    = trim($_POST['email'] ?? '');
+    if (!$username || !$password || !$fullname || !$email) {
+        $error = 'Please fill in all fields.';
+    } elseif (strlen($password) < 6) {
+        $error = 'Password must be at least 6 characters.';
+    } elseif ($password !== $confirm) {
+        $error = 'Passwords do not match.';
+    } else {
+        $chk = $pdo->prepare(
+            'SELECT id FROM users WHERE username=? OR email=?'
+        );
+        $chk->execute([$username, $email]);
+        if ($chk->fetch()) {
+            $error = 'Username or Email already exists.';
+        } else {
+            $hash = password_hash($password, PASSWORD_DEFAULT);
+            $pdo->prepare(
+                'INSERT INTO users (username,password,fullname,email) VALUES (?,?,?,?)'
+            )->execute([$username, $hash, $fullname, $email]);
+            $success = 'Account created!';
+        }
+    }
+}
+?>
+\end{lstlisting}
+
+\newpage
+
+%%---------- ภาคผนวก จ ----------
+\subsection*{ภาคผนวก จ: check\_lottery.php --- Logic ตรวจรางวัล}
+
+\begin{lstlisting}[style=phpstyle, caption={check\_lottery.php}]
+<?php
+session_start();
+if (!isset($_SESSION['user_id'])) { header('Location: index.php'); exit; }
+require 'db_config.php';
+$userId = $_SESSION['user_id'];
+
+$win = $pdo->query(
+    'SELECT number,draw_date FROM winning_numbers
+     ORDER BY draw_date DESC,id DESC LIMIT 1'
+)->fetch();
+$winNum   = $win ? $win['number'] : null;
+$winFront = $winNum ? substr($winNum, 0, 3) : null;
+$winBack  = $winNum ? substr($winNum, 3, 3) : null;
+$result   = null;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $check = trim($_POST['check_number'] ?? '');
+    if (!preg_match('/^\d{6}$/', $check)) {
+        $result = ['type'=>'error','msg'=>'Please enter exactly 6 digits.'];
+    } elseif (!$winNum) {
+        $result = ['type'=>'error','msg'=>'No winning number has been set yet.'];
+    } else {
+        $stmt = $pdo->prepare(
+            'SELECT COALESCE(SUM(units),0) AS tu
+             FROM lottery_purchases WHERE user_id=? AND number=?'
+        );
+        $stmt->execute([$userId, $check]);
+        $userUnits = (int)$stmt->fetch()['tu'];
+        if ($userUnits === 0) {
+            $result = ['type'=>'none_bought','check'=>$check];
+        } else {
+            $prizes = [];
+            if ($check === $winNum) {
+                $prizes[] = ['label'=>'6-Digit Jackpot','rate'=>6000000,
+                             'total'=>$userUnits*6000000];
+            }
+            if (substr($check,0,3)===$winFront && $check!==$winNum) {
+                $prizes[] = ['label'=>'3-Front Match','rate'=>4000,
+                             'total'=>$userUnits*4000];
+            }
+            if (substr($check,3,3)===$winBack && $check!==$winNum
+                && substr($check,0,3)!==$winFront) {
+                $prizes[] = ['label'=>'3-Tail Match','rate'=>4000,
+                             'total'=>$userUnits*4000];
+            }
+            $result = empty($prizes)
+                ? ['type'=>'no_win','check'=>$check,'units'=>$userUnits]
+                : ['type'=>'win','check'=>$check,'units'=>$userUnits,
+                   'prizes'=>$prizes];
+        }
+    }
+}
+?>
+\end{lstlisting}
+
+\newpage
+
+%%---------- ภาคผนวก ฉ ----------
+\subsection*{ภาคผนวก ฉ: logout.php}
+
+\begin{lstlisting}[style=phpstyle, caption={logout.php}]
+<?php
+session_start();
+session_destroy();
+header('Location: index.php');
+exit;
+?>
+\end{lstlisting}
+
+\vspace{2em}
+\begin{center}
+--- จบรายงาน ---
+\end{center}
+
+\end{document}
