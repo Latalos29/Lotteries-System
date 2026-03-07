@@ -1,9 +1,9 @@
 <?php
 // db_config.php – Database connection for LuckyStar
 $host   = 'localhost';
-$dbname = 'luckystar_db';
 $user   = 'root';
 $pass   = '';
+$dbname = 'luckystar_db';
 
 try {
     $pdo = new PDO(
