@@ -19,7 +19,7 @@
       echo json_encode(['ok' => false, 'msg' => 'Number must be exactly 6 digits.']); // แปลงเป็นjson ok:false, 'msg':'Number must be exactly 6 digits.'
       exit;
     }
-    if ($units < 1 || $units > 100) {
+    if ($units < 1 || $units > 20) {
       echo json_encode(['ok' => false, 'msg' => 'Units must be 1–20.']);
       exit;
     }
